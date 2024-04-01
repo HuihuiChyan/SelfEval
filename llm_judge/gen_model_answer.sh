@@ -9,4 +9,4 @@ python -u llm_judge/gen_judgment.py \
     --parallel 4 \
     --judge-model gpt-4
 
-python show_result.py
+python llm_judge/show_result.py
