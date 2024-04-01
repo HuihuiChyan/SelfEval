@@ -344,9 +344,9 @@ if __name__ == "__main__":
         help="The model revision to load.",
     )
     parser.add_argument(
-        "--estimation_mode",
+        "--estimation-mode",
         type=str,
-        default="logprobs-",
+        default="logprobs",
         help="The model revision to load.",
     )
 
