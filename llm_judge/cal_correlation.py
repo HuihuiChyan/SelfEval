@@ -1,18 +1,23 @@
 import sys
 import json
+import argparse
 from scipy.stats import pearsonr, spearmanr, kendalltau
 
-model_name = "llama2-7b-chat"
-bench_name = "mt_bench"
-method_name = "ensemble-logprobs-var-means"
-with open("./data/" + bench_name + "/model_judgment/gpt-4_single.jsonl", "r") as fsys:
+parser = argparse.ArgumentParser()
+parser.add_argument("--model_name", type=str, default="llama2-7b-chat")
+parser.add_argument("--bench_name", type=str, default="mt_bench")
+parser.add_argument("--estimation_mode", type=str, default="logprobs")
+
+args = parser.parse_args()
+
+with open("./data/" + args.bench_name + "/model_judgment/gpt-4_single.jsonl", "r") as fsys:
     lines = [json.loads(line.strip()) for line in fsys.readlines()]
     syslines = []
     for line in lines:
         if line["model"] == model_name:
             syslines.append(line)
             
-with open("./data/" + bench_name + "/model_answer/" + model_name + "-" + method_name + ".jsonl", "r") as feva:
+with open("./data/" + args.bench_name + "/model_answer/" + args.model_name + "-" + args.method_name + ".jsonl", "r") as feva:
     evalines = [json.loads(line.strip()) for line in feva.readlines()]
 
 syslines = sorted(syslines, key=lambda d: d['turn'])

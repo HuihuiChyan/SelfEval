@@ -1,4 +1,4 @@
-def create_prompt_predefined(model_type, data_type):
+def create_prompt_predefined(model_type):
     if model_type == "auto-j":
         instruction_single = """[INST] Write critiques for a submitted response on a given user's query, and grade the response:
   
