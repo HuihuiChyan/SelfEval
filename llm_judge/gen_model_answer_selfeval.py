@@ -143,7 +143,7 @@ def get_model_answers(
                     temperature=temperature,
                     max_new_token=max_new_token,
                     estimation_mode=estimation_mode,
-                ):
+                )
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)

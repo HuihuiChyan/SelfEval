@@ -1,7 +1,8 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=0
-python -u llm_judge/gen_model_answer.py \
-    --model-path ./models/llama2-7b-chat \
+export CUDA_VISIBLE_DEVICES=1
+export CUDA_LAUNCH_BLOCKING=1
+python -u gen_model_answer.py \
+    --model-path ../models/llama2-7b-chat \
     --model-id llama2-7b-chat
 
 python -u llm_judge/gen_judgment.py \
