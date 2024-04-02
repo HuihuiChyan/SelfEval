@@ -1,9 +1,9 @@
 #!/bin/bash
 export CUDA_VISIBLE_DEVICES=1,2
 export CUDA_LAUNCH_BLOCKING=1
-MODEL_NAME=llama2-7b-chat
+MODEL_NAME=vicuna-7b
 BENCH_NAME=mt_bench
-ESTIMATION_MODE=logprobs
+ESTIMATION_MODE=logprobs-variance
 python -u gen_model_answer_selfeval.py \
     --model-path ../models/$MODEL_NAME \
     --model-id $MODEL_NAME \
