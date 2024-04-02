@@ -10,7 +10,7 @@ parser.add_argument("--estimation_mode", type=str, default="logprobs")
 
 args = parser.parse_args()
 
-with open("./data/" + args.bench_name + "/model_judgment/gpt-4_single_old.jsonl", "r") as fsys:
+with open("./data/" + args.bench_name + "/model_judgment/gpt-4_single.jsonl", "r") as fsys:
     lines = [json.loads(line.strip()) for line in fsys.readlines()]
     syslines = []
     for line in lines:
@@ -28,8 +28,8 @@ evalines = sorted(evalines, key=lambda d: d['question_id'])
 
 lines = []
 for line in evalines:
-    lines.append(line["evaluations"][0])
-    lines.append(line["evaluations"][1])
+    lines.append(line["evaluations"][0][0])
+    lines.append(line["evaluations"][1][0])
 
 assert len(syslines) == len(lines) == 160
 
