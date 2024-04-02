@@ -9,7 +9,7 @@ import json
 import numpy as np
 from tqdm import tqdm
 
-from fastchat.llm_judge.common import (
+from common import (
     load_questions,
     load_model_answers,
     load_judge_prompts,
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     # Show match stats and prompt enter to continue
     print("Stats:")
     print(json.dumps(match_stat, indent=4))
-    input("Press Enter to confirm...")
+    # input("Press Enter to confirm...")
 
     # Play matches
     if args.parallel == 1:

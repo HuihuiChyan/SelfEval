@@ -423,14 +423,10 @@ def play_a_match_pair(match: MatchPair, output_file: str):
 
 #     return output
 
+# 基于one api的GPT4调用代码，不需要开梯子，如果开了梯子可能导致无法访问
 def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     import requests
     import json
-    # url = "http://internal.ai-chat.host/v1/chat/completions"
-    # headers = {
-    #     "Content-Type": "application/json",
-    #     "Authorization": "Bearer sk-QKZWGHrLphnxiyH8F7F1Fd62E18345409cA3049c7f9191E4", # 请确保替换'$sk'为您的实际token
-    # }
     url = "https://api.chatgpt-3.vip/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
@@ -447,9 +443,8 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
                 raise openai.error.APIError("Completion stopped before completion.")
             output = response['choices'][0]['message']['content']
             break
-        except:
-            print("Exception! The response is:")
-            print(response)
+        except Exception as e:
+            print("Exception!" + str(e))
             time.sleep(API_RETRY_SLEEP)
 
     return output

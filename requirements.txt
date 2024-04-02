@@ -1,1 +1,6 @@
 transformers=4.37.0
+openai=0.28.0
+fschat=0.2.36
+accelerate
+anthropic
+scipy

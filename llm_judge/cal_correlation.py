@@ -10,14 +10,14 @@ parser.add_argument("--estimation_mode", type=str, default="logprobs")
 
 args = parser.parse_args()
 
-with open("./data/" + args.bench_name + "/model_judgment/gpt-4_single.jsonl", "r") as fsys:
+with open("./data/" + args.bench_name + "/model_judgment/gpt-4_single_old.jsonl", "r") as fsys:
     lines = [json.loads(line.strip()) for line in fsys.readlines()]
     syslines = []
     for line in lines:
-        if line["model"] == model_name:
+        if line["model"] == args.model_name:
             syslines.append(line)
             
-with open("./data/" + args.bench_name + "/model_answer/" + args.model_name + "-" + args.method_name + ".jsonl", "r") as feva:
+with open("./data/" + args.bench_name + "/model_answer/" + args.model_name + "-" + args.estimation_mode + ".jsonl", "r") as feva:
     evalines = [json.loads(line.strip()) for line in feva.readlines()]
 
 syslines = sorted(syslines, key=lambda d: d['turn'])
