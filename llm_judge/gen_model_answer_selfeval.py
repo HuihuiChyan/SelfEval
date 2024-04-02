@@ -127,6 +127,7 @@ def get_model_answers(
         for i in range(num_choices):
             torch.manual_seed(i)
             conv = get_conversation_template(model_id)
+            import pdb;pdb.set_trace()
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
