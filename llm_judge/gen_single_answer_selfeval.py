@@ -74,7 +74,7 @@ def get_single_answer(
     if estimation_mode == "logprobs":
         output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
-        # output_ids[0][:prefix_len] = -100 # instruction masking
+        output_ids[0][:prefix_len] = -100 # instruction masking
         second_outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
@@ -83,13 +83,13 @@ def get_single_answer(
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
-        # log_probs[output_ids==-100] = 0 # instruction masking
-        evaluation = torch.gather(log_probs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / total_len
+        log_probs[output_ids==-100] = 0 # instruction masking
+        evaluation = torch.gather(log_probs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len
 
     elif estimation_mode == "logprobs-entropy":
         output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
-        # output_ids[0][:prefix_len] = -100 # instruction masking
+        output_ids[0][:prefix_len] = -100 # instruction masking
         second_outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
@@ -98,14 +98,14 @@ def get_single_answer(
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
-        # log_probs[output_ids==-100] = 0 # instruction masking
+        log_probs[output_ids==-100] = 0 # instruction masking
         log_probs = log_probs * second_outputs["logits"]
-        evaluation = (log_probs.sum(-1) / total_len).sum(-1) / 32000
+        evaluation = (log_probs.sum(-1) / target_len).sum(-1) / 32000
 
     elif estimation_mode == "logprobs-variance":
         output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
-        # output_ids[0][:prefix_len] = -100 # instruction masking
+        output_ids[0][:prefix_len] = -100 # instruction masking
         second_outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
@@ -115,8 +115,8 @@ def get_single_answer(
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
         log_probs = torch.var(log_probs, dim=-1)
-        # log_probs[output_ids==-100] = 0 # instruction masking
-        evaluation = log_probs.sum(-1) / total_len
+        log_probs[output_ids==-100] = 0 # instruction masking
+        evaluation = log_probs.sum(-1) / target_len
     
     elif estimation_mode == "attention-variance":
         evaluation = 0.0
