@@ -143,7 +143,7 @@ def get_single_answer(
 
     elif estimation_mode == "scores":
         evaluation = torch.gather(torch.vstack(outputs["scores"]), dim=-1, index=output_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len
-        import pdb;pdb.set_trace()
+        evaluation = evaluation.unsqueeze(0) # 统一形状为 [batch_size]
     
     else:
         raise Exception("Please check your estimation mode!")
