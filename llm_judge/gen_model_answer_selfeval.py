@@ -252,7 +252,7 @@ def get_model_answers_ensemble(
 
         # Dump answers
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
-        with open(os.path.expanduser(answer_file).rstrip(".jsonl")+"-"+estimation_mode+".jsonl", "a") as fout:
+        with open(os.path.expanduser(answer_file), "a") as fout:
             ans_json = {
                 "question_id": question["question_id"],
                 "answer_id": shortuuid.uuid(),
@@ -362,7 +362,7 @@ if __name__ == "__main__":
     if args.answer_file:
         answer_file = args.answer_file
     else:
-        answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}.jsonl"
+        answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}-{args.estimation_mode}.jsonl"
 
     print(f"Output to {answer_file}")
 
