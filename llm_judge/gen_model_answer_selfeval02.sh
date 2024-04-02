@@ -1,9 +1,9 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=1,2
+export CUDA_VISIBLE_DEVICES=3,4
 export CUDA_LAUNCH_BLOCKING=1
 MODEL_NAME=llama2-7b-chat
 BENCH_NAME=mt_bench
-ESTIMATION_MODE=logprobs
+ESTIMATION_MODE=logprobs-entropy
 # python -u gen_model_answer_selfeval.py \
 #     --model-path ../models/$MODEL_NAME \
 #     --model-id $MODEL_NAME \

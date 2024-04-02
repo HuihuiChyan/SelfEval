@@ -147,7 +147,7 @@ def get_model_answers(
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
-                evaluations.append(evaluation.tolist())
+                evaluations.append(evaluation.tolist()[0])
             
             choices.append({"index": i, "turns": turns})
 
