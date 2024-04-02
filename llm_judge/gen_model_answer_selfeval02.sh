@@ -5,10 +5,10 @@ MODEL_NAME=llama2-7b-chat
 BENCH_NAME=mt_bench
 ESTIMATION_MODE=logprobs-entropy
 # python -u gen_model_answer_selfeval.py \
-#     --model-path ../models/$MODEL_NAME \
-#     --model-id $MODEL_NAME \
-#     --estimation-mode $ESTIMATION_MODE \
-#     --num-gpus-total 4
+#      --model-path ../models/$MODEL_NAME \
+#      --model-id $MODEL_NAME \
+#      --estimation-mode $ESTIMATION_MODE \
+#      --num-gpus-total 4
 
 python -u cal_correlation.py \
     --model_name $MODEL_NAME \
