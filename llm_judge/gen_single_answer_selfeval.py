@@ -32,7 +32,8 @@ def get_single_answer(
 
     # sequences, attentions, scores
     prefix_len = len(input_ids[0])
-    target_len = len(outputs["sequences"][0]) - prefix_len
+    total_len = len(outputs["sequences"][0])
+    target_len = total_len - prefix_len
     output_ids = outputs["sequences"][0][prefix_len:]
 
     # be consistent with the template's stop_token_ids
@@ -99,7 +100,7 @@ def get_single_answer(
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
         # log_probs[output_ids==-100] = 0 # instruction masking
         log_probs = log_probs * second_outputs["logits"]
-        evaluation = (log_probs.sum(-1) / target_len).sum(-1) / 32000
+        evaluation = (log_probs.sum(-1) / total_len.sum(-1) / 32000
 
     elif estimation_mode == "logprobs-variance":
         output_ids = copy.deepcopy(outputs["sequences"])
@@ -115,7 +116,7 @@ def get_single_answer(
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
         log_probs = torch.var(log_probs, dim=-1)
         # log_probs[output_ids==-100] = 0 # instruction masking
-        evaluation = log_probs.sum(-1) / target_len
+        evaluation = log_probs.sum(-1) / total_len
     
     elif estimation_mode == "attention-variance":
         evaluation = 0.0

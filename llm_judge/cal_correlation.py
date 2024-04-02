@@ -27,6 +27,7 @@ syslines = [line["score"] for line in syslines]
 evalines = sorted(evalines, key=lambda d: d['question_id'])
 
 lines = []
+import pdb;pdb.set_trace()
 for line in evalines:
     lines.append(line["evaluations"][0][0])
     lines.append(line["evaluations"][1][0])
