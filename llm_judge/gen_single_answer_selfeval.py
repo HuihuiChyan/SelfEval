@@ -73,7 +73,7 @@ def get_single_answer(
     if estimation_mode == "logprobs":
         output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
-        # output_ids[0][:prefix_len] = -100
+        # output_ids[0][:prefix_len] = -100 # instruction masking
         second_outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
@@ -82,13 +82,13 @@ def get_single_answer(
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
-        # log_probs[output_ids==-100] = 0
+        # log_probs[output_ids==-100] = 0 # instruction masking
         evaluation = torch.gather(log_probs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / (target_len + prefix_len)
 
     elif estimation_mode == "logprobs-entropy":
         output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
-        output_ids[0][:prefix_len] = -100
+        # output_ids[0][:prefix_len] = -100 # instruction masking
         second_outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
@@ -97,14 +97,14 @@ def get_single_answer(
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
-        log_probs[output_ids==-100] = 0
+        # log_probs[output_ids==-100] = 0 # instruction masking
         log_probs = log_probs * second_outputs["logits"]
         evaluation = (log_probs.sum(-1) / target_len).sum(-1) / 32000
 
     elif estimation_mode == "logprobs-variance":
         output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
-        output_ids[0][:prefix_len] = -100
+        # output_ids[0][:prefix_len] = -100 # instruction masking
         second_outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
@@ -114,14 +114,14 @@ def get_single_answer(
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
         log_probs = torch.var(log_probs, dim=-1)
-        log_probs[output_ids==-100] = 0
+        # log_probs[output_ids==-100] = 0 # instruction masking
         evaluation = log_probs.sum(-1) / target_len
     
     elif estimation_mode == "attention-variance":
         evaluation = 0.0
         for attn in outputs['attentions'][1:]:
             attn = torch.var(torch.cat(attn, dim=0).squeeze(dim=2), dim=-1)
-            output += attn.sum(dim=0).sum(dim=0) / 32 #/ 32 少除了一个防止下溢出
+            evaluation += attn.sum(dim=0).sum(dim=0) / 32 #/ 32 少除了一个防止下溢出
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
     elif estimation_mode == "attention-entropy":
@@ -133,12 +133,12 @@ def get_single_answer(
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
     elif estimation_mode == "attention-minimal":
-        output = 0.0
+        evaluation = 0.0
         for attn in outputs['attentions'][1:]:
             attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, vocab_size]
             attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, vocab_size]
-            output += (attn.sum(dim=-1) / attn.size(-1)).max()
-        evaluation = output / (len(outputs['attentions'])-1)
+            evaluation += (attn.sum(dim=-1) / attn.size(-1)).max()
+        evaluation = evaluation / (len(outputs['attentions'])-1)
 
     else:
         evaluation = torch.gather(torch.vstack(outputs["scores"]), dim=-1, index=output_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len

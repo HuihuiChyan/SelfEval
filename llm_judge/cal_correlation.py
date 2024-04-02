@@ -10,7 +10,7 @@ parser.add_argument("--estimation_mode", type=str, default="logprobs")
 
 args = parser.parse_args()
 
-with open("./data/" + args.bench_name + "/model_judgment/gpt-4_single.jsonl", "r") as fsys:
+with open("./data/" + args.bench_name + "/model_judgment/gpt-4_single_new.jsonl", "r") as fsys:
     lines = [json.loads(line.strip()) for line in fsys.readlines()]
     syslines = []
     for line in lines:

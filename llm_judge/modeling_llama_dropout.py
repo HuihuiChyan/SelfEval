@@ -29,6 +29,8 @@ from transformers.utils import (
 from transformers.utils.import_utils import is_torch_fx_available
 from transformers.models.llama.modeling_llama import LlamaModel, LlamaForCausalLM, LlamaConfig, LlamaRMSNorm, LlamaDecoderLayer
 
+DROPOUT = 0.1 # adjust to activate dropout in llama inference
+
 class LlamaDropoutModel(LlamaModel):
 
     def forward(
@@ -106,7 +108,7 @@ class LlamaDropoutModel(LlamaModel):
 
         # embed positions
         if dropout:
-            hidden_states = torch.nn.functional.dropout(inputs_embeds, p=0.2, training=True, inplace=False)
+            hidden_states = torch.nn.functional.dropout(inputs_embeds, p=DROPOUT, training=True, inplace=False)
         else:
             hidden_states = inputs_embeds
 
@@ -142,7 +144,7 @@ class LlamaDropoutModel(LlamaModel):
             hidden_states = layer_outputs[0]
 
             # if i < 1 and dropout:
-            #     hidden_states = torch.nn.functional.dropout(hidden_states, p=0.1, training=True, inplace=False)
+            #     hidden_states = torch.nn.functional.dropout(hidden_states, p=DROPOUT, training=True, inplace=False)
 
             if use_cache:
                 next_decoder_cache = layer_outputs[2 if output_attentions else 1]
