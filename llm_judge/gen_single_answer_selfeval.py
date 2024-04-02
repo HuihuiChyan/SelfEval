@@ -141,7 +141,11 @@ def get_single_answer(
             evaluation += (attn.sum(dim=-1) / attn.size(-1)).max()
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
-    else:
+    elif estimation_mode == "scores":
         evaluation = torch.gather(torch.vstack(outputs["scores"]), dim=-1, index=output_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len
+        import pdb;pdb.set_trace()
+    
+    else:
+        raise Exception("Please check your estimation mode!")
 
     return output_tokens, evaluation

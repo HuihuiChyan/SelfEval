@@ -28,8 +28,8 @@ evalines = sorted(evalines, key=lambda d: d['question_id'])
 
 lines = []
 for line in evalines:
-    lines.append(line["evaluations"][0])
-    lines.append(line["evaluations"][1])
+    lines.append(line["evaluations"][0][0])
+    lines.append(line["evaluations"][1][0])
 
 assert len(syslines) == len(lines) == 160
 
