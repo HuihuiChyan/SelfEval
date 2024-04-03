@@ -26,12 +26,20 @@ syslines = sorted(syslines, key=lambda d: d['question_id'])
 syslines = [line["score"] for line in syslines]
 evalines = sorted(evalines, key=lambda d: d['question_id'])
 
-lines = []
-for line in evalines:
-    lines.append(line["evaluations"][0])
-    lines.append(line["evaluations"][1])
+if args.bench_name == "mt_bench":
+    lines = []
+    for line in evalines:
+        lines.append(line["evaluations"][0])
+        lines.append(line["evaluations"][1])
 
-assert len(syslines) == len(lines) == 160
+    assert len(syslines) == len(lines) == 160
+
+else:
+    lines = []
+    for line in evalines:
+        lines.append(line["evaluations"][0])
+
+    assert len(syslines) == len(lines) == 80
 
 pearson = pearsonr(syslines, lines)[0]
 kendalltau = kendalltau(syslines, lines)[0]
