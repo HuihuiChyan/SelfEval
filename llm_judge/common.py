@@ -430,7 +430,7 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     url = "https://api.chatgpt-3.vip/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer sk-YbA0PBLo6X76clo88aAb29Fc0852428c8850390375AbA32d", # 请确保替换'$sk'为您的实际token
+        "Authorization": "Bearer sk-*********************", # 请确保替换'$sk'为您的实际token
     }
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
