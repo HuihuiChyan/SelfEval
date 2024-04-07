@@ -156,7 +156,7 @@ def get_model_answers(
                         max_new_token=max_new_token,
                         estimation_mode=estimation_mode,
                     )
-                    ensem_evaluation.append(evaluation.tolist()[0])
+                    ensem_evaluation.append(evaluation.tolist())
 
                     if k == 0:
                         conv.update_last_message(output_tokens)

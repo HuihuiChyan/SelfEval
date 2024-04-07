@@ -84,7 +84,7 @@ def get_single_answer(
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
-        evaluation = torch.gather(log_probs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len
+        evaluation = torch.gather(log_probs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1).sum(-1)[0] / target_len
 
     elif estimation_mode == "logprobs-entropy":
         output_ids = copy.deepcopy(outputs["sequences"])
@@ -100,7 +100,7 @@ def get_single_answer(
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
         log_probs = log_probs * second_outputs["logits"]
-        evaluation = (log_probs.sum(-1) / target_len).sum(-1) / 32000
+        evaluation = (log_probs.sum(-1) / target_len).sum(-1)[0] / 32000
 
     elif estimation_mode == "logprobs-variance":
         output_ids = copy.deepcopy(outputs["sequences"])
@@ -116,7 +116,7 @@ def get_single_answer(
         log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
         log_probs = torch.var(log_probs, dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
-        evaluation = log_probs.sum(-1) / target_len
+        evaluation = log_probs.sum(-1)[0] / target_len
     
     # elif estimation_mode == "attention-variance":
     #     evaluation = 0.0
@@ -143,7 +143,6 @@ def get_single_answer(
 
     elif estimation_mode == "scores":
         evaluation = torch.gather(torch.vstack(outputs["scores"]), dim=-1, index=output_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len
-        evaluation = evaluation.unsqueeze(0) # 统一形状为 [batch_size]
     
     else:
         raise Exception("Please check your estimation mode!")
