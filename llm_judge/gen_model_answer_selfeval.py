@@ -262,17 +262,19 @@ def get_model_answers_ensemble(
                         conv_stop_str=conv.stop_str,
                         temperature=temperature,
                         max_new_token=max_new_token,
-                        estimation_mode="logprobs-entropy",
+                        estimation_mode="logprobs",
                     )
                     ensem_evaluation.append(evaluation.tolist()[0])
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
-                if estimation_mode == "ensemble-mean":
-                    evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
-                elif estimation_mode == "ensemble-variance":
-                    from statistics import variance
-                    evaluations.append(variance(ensem_evaluation))
+                # if estimation_mode == "ensemble-mean":
+                #     evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
+                # elif estimation_mode == "ensemble-variance":
+                #     from statistics import variance
+                #     evaluations.append(variance(ensem_evaluation))
+                from statistics import variance
+                evaluations.append([sum(ensem_evaluation)/len(ensem_evaluation), variance(ensem_evaluation)])
             
             choices.append({"index": i, "turns": turns})
 

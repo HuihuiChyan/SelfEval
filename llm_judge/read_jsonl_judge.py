@@ -1,5 +1,6 @@
 import json
 import csv
+import random
 
 judge_file = "data/vicuna_bench/model_judgment/gpt-4_single.jsonl"
 quest_file = "data/vicuna_bench/question.jsonl"
@@ -44,18 +45,34 @@ open(answer_file1, "r") as fans1, open(answer_file2, "r") as fans2:
 
 with open('gpt-4.tsv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter='\t')
+
+    random.seed(42)
     
+    final_lines = []
     for qid in range(80):
         qid = str(qid+1)
         qes = final_dict[qid]["qes"]
-        scr1 = final_dict[qid]["scr1"]
-        scr2 = final_dict[qid]["scr2"]
-        ans1 = final_dict[qid]["ans1"]
-        ans2 = final_dict[qid]["ans2"]
+        if random.random() >= 0.5:
+            scr1 = final_dict[qid]["scr1"]
+            scr2 = final_dict[qid]["scr2"]
+            ans1 = final_dict[qid]["ans1"]
+            ans2 = final_dict[qid]["ans2"]
+            first_model = "llama2"
+        else:
+            scr1 = final_dict[qid]["scr2"]
+            scr2 = final_dict[qid]["scr1"]
+            ans1 = final_dict[qid]["ans2"]
+            ans2 = final_dict[qid]["ans1"]
+            first_model = "vicuna"
 
         if "ref" in final_dict[qid].keys():
-            final_line = [qid, qes, final_dict[qid]["ref"], ans1, ans2, scr1, scr2]
+            final_line = [qid, qes, final_dict[qid]["ref"], ans1, ans2, scr1, scr2, first_model]
         else:
-            final_line = [qid, qes, "", ans1, ans2, scr1, scr2]
+            final_line = [qid, qes, "", ans1, ans2, scr1, scr2, first_model]
+        
+        final_lines.append(final_line)
 
-        writer.writerow(final_line)
+    random.shuffle(final_lines)
+
+    for line in final_lines:
+        writer.writerow(line)
