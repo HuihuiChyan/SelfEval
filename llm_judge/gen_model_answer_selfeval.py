@@ -47,6 +47,10 @@ def run_eval(
     assert num_gpus_total % num_gpus_per_model == 0
     use_ray = num_gpus_total // num_gpus_per_model > 1
 
+    if "ensemble" in args.estimation_mode:
+        get_model_answers = get_model_answers_ensemble
+        estimation_mode = estimation_mode.lstrip("ensemble-")
+
     if use_ray:
         get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
             get_model_answers
@@ -127,7 +131,6 @@ def get_model_answers(
         for i in range(num_choices):
             torch.manual_seed(i)
             conv = get_conversation_template(model_id)
-            import pdb;pdb.set_trace()
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
@@ -221,8 +224,6 @@ def get_model_answers_ensemble(
                 qs = question["turns"][j]
                 conv.append_message(conv.roles[0], qs)
                 conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
-                input_ids = tokenizer([prompt]).input_ids
 
                 if temperature < 1e-4:
                     do_sample = False
@@ -230,9 +231,14 @@ def get_model_answers_ensemble(
                     do_sample = True
 
                 ensemble_num = 10
+                ensem_evaluation = []
                 for k in range(ensemble_num):
                     # some models may error out when generating long outputs
                     torch.manual_seed(k)
+                    
+                    ensem_conv = copy.deepcopy(conv)
+                    prompt = ensem_conv.get_prompt()
+                    input_ids = tokenizer([prompt]).input_ids
 
                     output_tokens, evaluation = get_single_answer(
                         tokenizer,
@@ -245,9 +251,11 @@ def get_model_answers_ensemble(
                         estimation_mode=estimation_mode,
                     )
 
+                    ensem_evaluation.append(evaluation.tolist()[0])
+
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
-                evaluations.append(evaluation.tolist())
+                evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
             
             choices.append({"index": i, "turns": turns})
 
