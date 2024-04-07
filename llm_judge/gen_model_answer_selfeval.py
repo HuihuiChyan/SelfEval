@@ -48,15 +48,17 @@ def run_eval(
     use_ray = num_gpus_total // num_gpus_per_model > 1
 
     if "ensemble" in args.estimation_mode:
-        get_model_answers = get_model_answers_ensemble
+        get_model_answers_func = get_model_answers_ensemble
         estimation_mode = estimation_mode.lstrip("ensemble-")
+    else:
+        get_model_answers_func = get_model_answers
 
     if use_ray:
         get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
-            get_model_answers
+            get_model_answers_func
         ).remote
     else:
-        get_answers_func = get_model_answers
+        get_answers_func = get_model_answers_func
 
     chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
     ans_handles = []
