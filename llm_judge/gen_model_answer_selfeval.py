@@ -62,7 +62,7 @@ def run_eval(
 
     if "ensemble" in args.estimation_mode:
         get_model_answers_func = get_model_answers_ensemble
-        estimation_mode = estimation_mode.lstrip("ensemble-")
+        estimation_mode = estimation_mode.replace("ensemble-", "")
     else:
         get_model_answers_func = get_model_answers
 
