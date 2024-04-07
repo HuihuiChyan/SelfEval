@@ -24,7 +24,6 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from gen_single_answer_selfeval import get_single_answer
 
 system_messages = [
-    "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.",
     "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.",
     "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions.",
     "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful answers to the user's questions.",
@@ -34,6 +33,7 @@ system_messages = [
     "Below is an instruction that describes a task. Write a response that appropriately completes the request.",
     "The following is a conversation between a human and an AI assistant. The human and the AI assistant take turns chatting. The AI assistant always provides responses in as much detail as possible, and in Markdown format. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues.",
     "A conversation between a user and an LLM-based AI assistant. The assistant gives helpful and honest answers.",
+    "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human's questions.",
 ]
 
 def run_eval(
@@ -254,7 +254,6 @@ def get_model_answers_ensemble(
                     ensem_conv.system_message = system_messages[k]
                     prompt = ensem_conv.get_prompt()
                     input_ids = tokenizer([prompt]).input_ids
-                    import pdb;pdb.set_trace()
 
                     output_tokens, evaluation = get_single_answer(
                         tokenizer,
