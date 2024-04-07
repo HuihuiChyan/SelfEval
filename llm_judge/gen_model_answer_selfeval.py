@@ -61,10 +61,10 @@ def run_eval(
 
     if use_ray:
         get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
-            get_model_answers_func
+            get_model_answers
         ).remote
     else:
-        get_answers_func = get_model_answers_func
+        get_answers_func = get_model_answers
 
     chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
     ans_handles = []
