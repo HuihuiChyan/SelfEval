@@ -49,7 +49,7 @@ def run_eval(
 
     if "ensemble" in args.estimation_mode:
         get_model_answers_func = get_model_answers_ensemble
-        estimation_mode = estimation_mode.replace("ensemble-", "")
+        estimation_mode = estimation_mode.lstrip("ensemble-")
     else:
         get_model_answers_func = get_model_answers
 
@@ -219,7 +219,6 @@ def get_model_answers_ensemble(
         evaluations = []
         choices = []
         for i in range(num_choices):
-            torch.manual_seed(i)
             conv = get_conversation_template(model_id)
             turns = []
             for j in range(len(question["turns"])):
@@ -236,9 +235,10 @@ def get_model_answers_ensemble(
                 ensem_evaluation = []
                 for k in range(ensemble_num):
                     # some models may error out when generating long outputs
-                    torch.manual_seed(k)
+                    torch.manual_seed(k*10+i)
                     
                     ensem_conv = copy.deepcopy(conv)
+                    import pdb;pdb.set_trace()
                     prompt = ensem_conv.get_prompt()
                     input_ids = tokenizer([prompt]).input_ids
 
@@ -254,10 +254,8 @@ def get_model_answers_ensemble(
                     )
 
                     ensem_evaluation.append(evaluation.tolist()[0])
-
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
-                import pdb;pdb.set_trace()
                 evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
             
             choices.append({"index": i, "turns": turns})
