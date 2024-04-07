@@ -130,7 +130,6 @@ def get_model_answers(
         evaluations = []
         choices = []
         for i in range(num_choices):
-            torch.manual_seed(i)
             conv = get_conversation_template(model_id)
             turns = []
             for j in range(len(question["turns"])):
@@ -162,7 +161,7 @@ def get_model_answers(
                     if k == 0:
                         conv.update_last_message(output_tokens)
                         turns.append(output_tokens)
-                        
+
                 evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
             
             choices.append({"index": i, "turns": turns})

@@ -122,22 +122,23 @@ def get_single_answer(
         evaluation = 0.0
         for attn in outputs['attentions'][1:]:
             attn = torch.var(torch.cat(attn, dim=0).squeeze(dim=2), dim=-1)
-            evaluation += attn.sum(dim=0).sum(dim=0) / 32 #/ 32 少除了一个防止下溢出
+            evaluation += attn.sum(dim=0).sum(dim=0) / 32 #/ 32 32是layer_num和head_num，这里少除了一个防止下溢出
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
     elif estimation_mode == "attention-entropy":
         evaluation = 0.0
-        for attn in outputs['attentions'][1:]:
+        for attn in outputs['attentions'][1:]: #(layer_num * [batch_size, head_num, curr_len]
+            import pdb;pdb.set_trace()
             attn = torch.cat(attn, dim=0).squeeze(dim=2)
-            attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn
-            evaluation += attn.sum(dim=0).sum(dim=0).sum(dim=0) / 32 / attn.size(-1) #/ 32 少除了一个防止下溢出
+            attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
+            evaluation += attn.sum(dim=0).sum(dim=0).sum(dim=0) / 32 / attn.size(-1) #/ 32 32是layer_num和head_num，这里少除了一个防止下溢出
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
     elif estimation_mode == "attention-minimal":
         evaluation = 0.0
         for attn in outputs['attentions'][1:]:
             attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, vocab_size]
-            attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, vocab_size]
+            attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
             evaluation += (attn.sum(dim=-1) / attn.size(-1)).max()
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
