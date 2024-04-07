@@ -62,7 +62,6 @@ def run_eval(
 
     if "ensemble" in args.estimation_mode:
         get_model_answers_func = get_model_answers_ensemble
-        estimation_mode = estimation_mode.replace("ensemble-", "")
     else:
         get_model_answers_func = get_model_answers
 
@@ -265,11 +264,15 @@ def get_model_answers_ensemble(
                         max_new_token=max_new_token,
                         estimation_mode=estimation_mode,
                     )
-
                     ensem_evaluation.append(evaluation.tolist()[0])
+
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
-                evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
+                if estimation_mode == "ensemble-mean":
+                    evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
+                elif estimation_mode == "ensemble-variance":
+                    from statistics import variance
+                    evaluations.append(variance(ensem_evaluation))
             
             choices.append({"index": i, "turns": turns})
 
