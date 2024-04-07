@@ -19,7 +19,6 @@ from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
 
-from modeling_llama_dropout import LlamaDropoutForCausalLM
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from gen_single_answer_selfeval import get_single_answer
 
@@ -54,16 +53,11 @@ def run_eval(
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
-    # random.shuffle(questions)
+    random.shuffle(questions)
 
     # Split the question file into `num_gpus` files
     assert num_gpus_total % num_gpus_per_model == 0
     use_ray = num_gpus_total // num_gpus_per_model > 1
-
-    if "ensemble" in args.estimation_mode:
-        get_model_answers_func = get_model_answers_ensemble
-    else:
-        get_model_answers_func = get_model_answers
 
     if use_ray:
         get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
@@ -109,30 +103,23 @@ def get_model_answers(
     revision,
     estimation_mode,
 ):
-    # model, tokenizer = load_model(
-    #     model_path,
-    #     revision=revision,
-    #     device="cuda",
-    #     num_gpus=num_gpus_per_model,
-    #     max_gpu_memory=max_gpu_memory,
-    #     dtype=dtype,
-    #     load_8bit=False,
-    #     cpu_offloading=False,
-    #     debug=False,
-    # )
-    tokenizer = AutoTokenizer.from_pretrained(
+    model, tokenizer = load_model(
         model_path,
-        use_fast=True,
         revision=revision,
-        trust_remote_code=True,
+        device="cuda",
+        num_gpus=num_gpus_per_model,
+        max_gpu_memory=max_gpu_memory,
+        dtype=dtype,
+        load_8bit=False,
+        cpu_offloading=False,
+        debug=False,
     )
-    # Adjust the dropout rate in modeling_llama_dropout.py, default is zero
-    model = LlamaDropoutForCausalLM.from_pretrained(
-        model_path,
-        low_cpu_mem_usage=True,
-        trust_remote_code=True,
-        torch_dtype=torch.float16,
-    ).cuda()
+
+    if "ensemble" in args.estimation_mode:
+        estimation_mode = estimation_mode.replace("ensemble-", "")
+        ensemble_num = 10 # By default ensemble 10 times
+    else:
+        ensemble_num = 1
 
     for question in tqdm(questions):
         if question["category"] in temperature_config:
@@ -150,103 +137,9 @@ def get_model_answers(
                 qs = question["turns"][j]
                 conv.append_message(conv.roles[0], qs)
                 conv.append_message(conv.roles[1], None)
-                prompt = conv.get_prompt()
 
-                output_tokens, evaluation = get_single_answer(
-                    tokenizer,
-                    model,
-                    prompt,
-                    conv_stop_token_ids=conv.stop_token_ids,
-                    conv_stop_str=conv.stop_str,
-                    temperature=temperature,
-                    max_new_token=max_new_token,
-                    estimation_mode=estimation_mode,
-                )
-
-                conv.update_last_message(output_tokens)
-                turns.append(output_tokens)
-                evaluations.append(evaluation.tolist()[0])
-            
-            choices.append({"index": i, "turns": turns})
-
-        # Dump answers
-        os.makedirs(os.path.dirname(answer_file), exist_ok=True)
-        with open(os.path.expanduser(answer_file), "a") as fout:
-            ans_json = {
-                "question_id": question["question_id"],
-                "answer_id": shortuuid.uuid(),
-                "model_id": model_id,
-                "choices": choices,
-                "evaluations": evaluations,
-                "tstamp": time.time(),
-            }
-            fout.write(json.dumps(ans_json) + "\n")
-
-
-@torch.inference_mode()
-def get_model_answers_ensemble(
-    model_path,
-    model_id,
-    questions,
-    answer_file,
-    max_new_token,
-    num_choices,
-    num_gpus_per_model,
-    max_gpu_memory,
-    dtype,
-    revision,
-    estimation_mode,
-):
-    # model, tokenizer = load_model(
-    #     model_path,
-    #     revision=revision,
-    #     device="cuda",
-    #     num_gpus=num_gpus_per_model,
-    #     max_gpu_memory=max_gpu_memory,
-    #     dtype=dtype,
-    #     load_8bit=False,
-    #     cpu_offloading=False,
-    #     debug=False,
-    # )
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_path,
-        use_fast=True,
-        revision=revision,
-        trust_remote_code=True,
-    )
-    # Adjust the dropout rate in modeling_llama_dropout.py, default is zero
-    model = LlamaDropoutForCausalLM.from_pretrained(
-        model_path,
-        low_cpu_mem_usage=True,
-        trust_remote_code=True,
-        torch_dtype=torch.float16,
-    ).cuda()
-
-    for question in tqdm(questions):
-        if question["category"] in temperature_config:
-            temperature = temperature_config[question["category"]]
-        else:
-            temperature = 0.7
-
-        evaluations = []
-        choices = []
-        for i in range(num_choices):
-            conv = get_conversation_template(model_id)
-            turns = []
-            for j in range(len(question["turns"])):
-                qs = question["turns"][j]
-                conv.append_message(conv.roles[0], qs)
-                conv.append_message(conv.roles[1], None)
-
-                if temperature < 1e-4:
-                    do_sample = False
-                else:
-                    do_sample = True
-
-                ensemble_num = 10
                 ensem_evaluation = []
                 for k in range(ensemble_num):
-                    # some models may error out when generating long outputs
                     torch.manual_seed(k*10+i)
                     
                     ensem_conv = copy.deepcopy(conv)
@@ -262,19 +155,15 @@ def get_model_answers_ensemble(
                         conv_stop_str=conv.stop_str,
                         temperature=temperature,
                         max_new_token=max_new_token,
-                        estimation_mode="logprobs",
+                        estimation_mode=estimation_mode,
                     )
                     ensem_evaluation.append(evaluation.tolist()[0])
 
-                conv.update_last_message(output_tokens)
-                turns.append(output_tokens)
-                # if estimation_mode == "ensemble-mean":
-                #     evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
-                # elif estimation_mode == "ensemble-variance":
-                #     from statistics import variance
-                #     evaluations.append(variance(ensem_evaluation))
-                from statistics import variance
-                evaluations.append([sum(ensem_evaluation)/len(ensem_evaluation), variance(ensem_evaluation)])
+                    if k == 0:
+                        conv.update_last_message(output_tokens)
+                        turns.append(output_tokens)
+                        
+                evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
             
             choices.append({"index": i, "turns": turns})
 
