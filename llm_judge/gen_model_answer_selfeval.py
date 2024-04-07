@@ -49,7 +49,7 @@ def run_eval(
 
     if "ensemble" in args.estimation_mode:
         get_model_answers_func = get_model_answers_ensemble
-        estimation_mode = estimation_mode.lstrip("ensemble-")
+        estimation_mode = estimation_mode.replace("ensemble-", "")
     else:
         get_model_answers_func = get_model_answers
 
@@ -257,6 +257,7 @@ def get_model_answers_ensemble(
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
+                import pdb;pdb.set_trace()
                 evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
             
             choices.append({"index": i, "turns": turns})
