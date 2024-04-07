@@ -262,7 +262,7 @@ def get_model_answers_ensemble(
                         conv_stop_str=conv.stop_str,
                         temperature=temperature,
                         max_new_token=max_new_token,
-                        estimation_mode=estimation_mode,
+                        estimation_mode="logprobs-entropy",
                     )
                     ensem_evaluation.append(evaluation.tolist()[0])
 
