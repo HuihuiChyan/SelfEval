@@ -172,7 +172,7 @@ def get_model_answers(
                     ensem_evaluation = []
                     for k in range(ensemble_num):
                         
-                        ensemble_type = "temperature"
+                        ensemble_type = "noise"
                         
                         if ensemble_type == "prompt":
 
@@ -218,7 +218,7 @@ def get_model_answers(
                                 prompt,
                                 conv_stop_token_ids=conv.stop_token_ids,
                                 conv_stop_str=conv.stop_str,
-                                temperature=0.0,
+                                temperature=0.5,
                                 max_new_token=max_new_token,
                             )
                             ensem_conv = copy.deepcopy(conv)
@@ -236,8 +236,6 @@ def get_model_answers(
                                 estimation_mode,
                             )
                             ensem_evaluation.append(evaluation)
-
-                            import pdb;pdb.set_trace()
 
                 import pdb;pdb.set_trace()
 
