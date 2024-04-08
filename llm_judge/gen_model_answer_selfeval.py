@@ -20,7 +20,7 @@ from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from gen_single_answer_selfeval import get_single_answer
+from gen_single_answer_selfeval import get_single_answer, get_single_evaluation
 
 system_messages = [
     "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.",
@@ -61,10 +61,10 @@ def run_eval(
 
     if use_ray:
         get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
-            get_model_answers_func
+            get_model_answers
         ).remote
     else:
-        get_answers_func = get_model_answers_func
+        get_answers_func = get_model_answers
 
     chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
     ans_handles = []
@@ -148,7 +148,7 @@ def get_model_answers(
                     max_new_token=max_new_token,
                 )
                 if ensemble_num == 1:
-                    evaluation = generate_evaluation(
+                    evaluation = get_single_evaluation(
                         output_ids,
                         prefix_len,
                         target_len,
@@ -158,14 +158,13 @@ def get_model_answers(
                 else:
                     ensem_evaluation = []
                     for k in range(ensemble_num):
-                        
                         ensem_conv = copy.deepcopy(conv)
                         ensem_conv.system_message = system_messages[k]
                         prompt = ensem_conv.get_prompt()
                         input_ids = tokenizer([prompt]).input_ids
                         prefix_len = len(input_ids[0])
 
-                        evaluation = generate_evaluation(
+                        evaluation = get_single_evaluation(
                             output_ids,
                             prefix_len,
                             target_len,

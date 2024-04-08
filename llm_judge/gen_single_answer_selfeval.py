@@ -19,7 +19,7 @@ def get_single_answer_evaluation(
         temperature=temperature,
         max_new_token=max_new_token,
     )
-    evaluation = generate_evaluation(
+    evaluation = get_single_evaluation(
         output_ids,
         prefix_len,
         target_len,
@@ -99,7 +99,7 @@ def get_single_answer(
     return output_tokens, prefix_len, target_len, outputs["sequences"]
 
 
-def generate_evaluation(
+def get_single_evaluation(
     output_ids,
     prefix_len,
     target_len,
