@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=4,5
 export CUDA_LAUNCH_BLOCKING=1
 MODEL_NAME=vicuna-7b
 BENCH_NAME=vicuna_bench
-ESTIMATION_MODE=attention-entropy
+ESTIMATION_MODE=ensemble-logprobs-entropy
 python -u gen_model_answer_selfeval.py \
     --model-path ../models/$MODEL_NAME \
     --model-id $MODEL_NAME \
