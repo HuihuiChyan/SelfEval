@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=0
 export CUDA_LAUNCH_BLOCKING=1
 MODEL_NAME=vicuna-7b
 BENCH_NAME=vicuna_bench
@@ -9,7 +9,7 @@ python -u gen_model_answer_selfeval.py \
     --model-id $MODEL_NAME \
     --bench-name $BENCH_NAME \
     --estimation-mode $ESTIMATION_MODE \
-    --num-gpus-total 4
+    --num-gpus-total 1
 
 python -u cal_correlation.py \
     --model_name $MODEL_NAME \

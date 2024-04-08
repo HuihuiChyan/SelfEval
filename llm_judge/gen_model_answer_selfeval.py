@@ -165,6 +165,13 @@ def get_model_answers(
                         input_ids = tokenizer([prompt]).input_ids
                         prefix_len = len(input_ids[0])
 
+                        ensem_conv.update_last_message(output_tokens)
+                        prompt = ensem_conv.get_prompt()
+                        output_ids = tokenizer([prompt])
+                        target_len = len(output_ids[0]) - prefix_len
+
+                        import pdb;pdb.set_trace()
+
                         evaluation = get_single_evaluation(
                             model,
                             output_ids,
