@@ -191,6 +191,7 @@ def get_model_answers(
                         ensem_conv = copy.deepcopy(conv)
                         ensem_conv.update_last_message(output_tokens)
                         ensem_prompt = ensem_conv.get_prompt()
+                        import pdb;pdb.set_trace()
 
                         output_ids = torch.LongTensor(tokenizer([ensem_prompt]).input_ids)
                         target_len = len(output_ids[0]) - prefix_len
