@@ -54,7 +54,6 @@ def get_single_answer(
         output_attentions=True,
         output_scores=True,
         return_dict_in_generate=True,
-        add_noise=True,
     )
 
     # sequences, attentions, scores
