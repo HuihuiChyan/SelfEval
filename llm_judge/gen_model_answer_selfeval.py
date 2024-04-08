@@ -184,7 +184,7 @@ def get_model_answers(
                             )
                             ensem_evaluation.append(evaluation)
 
-                        elif ensemble_type == "temperature":
+                        elif ensemble_type == "temper":
 
                             torch.manual_seed(i * 10 + k)
                             output_tokens, prefix_len, target_len, output_ids = get_single_answer(
