@@ -19,7 +19,6 @@ from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
 
-from modeling_llama_noise import LlamaNoiseForCausalLM
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from gen_single_answer_selfeval import get_single_answer, get_single_evaluation
 
@@ -100,33 +99,25 @@ def get_model_answers(
     revision,
     estimation_mode,
 ):
-    # model, tokenizer = load_model(
-    #     model_path,
-    #     revision=revision,
-    #     device="cuda",
-    #     num_gpus=num_gpus_per_model,
-    #     max_gpu_memory=max_gpu_memory,
-    #     dtype=dtype,
-    #     load_8bit=False,
-    #     cpu_offloading=False,
-    #     debug=False,
-    # )
-    tokenizer = AutoTokenizer.from_pretrained(
+    model, tokenizer = load_model(
         model_path,
-        use_fast=True,
         revision=revision,
-        trust_remote_code=True,
+        device="cuda",
+        num_gpus=num_gpus_per_model,
+        max_gpu_memory=max_gpu_memory,
+        dtype=dtype,
+        load_8bit=False,
+        cpu_offloading=False,
+        debug=False,
     )
-    # Adjust the noise rate in modeling_llama_noise.py
-    model = LlamaNoiseForCausalLM.from_pretrained(
-        model_path,
-        low_cpu_mem_usage=True,
-        trust_remote_code=True,
-        torch_dtype=torch.float16,
-    ).cuda()
 
-    if "ensemble-" in args.estimation_mode:
-        estimation_mode = estimation_mode.replace("ensemble-", "")
+    if "ensemble-prompt-" in args.estimation_mode:
+        estimation_mode = estimation_mode.replace("ensemble-prompt-", "")
+        ensemble_type = "prompt"
+        ensemble_num = 7
+    elif "ensemble-temper-" in args.estimation_mode:
+        estimation_mode = estimation_mode.replace("ensemble-temper-", "")
+        ensemble_type = "temper"
         ensemble_num = 7
     else:
         ensemble_num = 1
@@ -159,10 +150,9 @@ def get_model_answers(
                     max_new_token=max_new_token,
                 )
                 if ensemble_num == 1:
-                    whole_ids = copy.deepcopy(output_ids)
                     evaluation = get_single_evaluation(
                         model,
-                        whole_ids,
+                        output_ids,
                         prefix_len,
                         target_len,
                         estimation_mode,
@@ -172,7 +162,6 @@ def get_model_answers(
                     ensem_evaluation = []
                     for k in range(ensemble_num):
                         
-                        ensemble_type = "temperature"
                         if ensemble_type == "prompt":
 
                             ensem_conv = copy.deepcopy(conv)
@@ -204,7 +193,7 @@ def get_model_answers(
                                 prompt,
                                 conv_stop_token_ids=conv.stop_token_ids,
                                 conv_stop_str=conv.stop_str,
-                                temperature=0.5,
+                                temperature=0.1,
                                 max_new_token=max_new_token,
                             )
                             ensem_conv = copy.deepcopy(conv)
