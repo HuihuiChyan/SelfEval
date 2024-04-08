@@ -159,9 +159,10 @@ def get_model_answers(
                     max_new_token=max_new_token,
                 )
                 if ensemble_num == 1:
+                    whole_ids = copy.deepcopy(output_ids)
                     evaluation = get_single_evaluation(
                         model,
-                        output_ids,
+                        whole_ids,
                         prefix_len,
                         target_len,
                         estimation_mode,
@@ -197,9 +198,10 @@ def get_model_answers(
 
                         elif ensemble_type == "noise":
 
+                            whole_ids = copy.deepcopy(output_ids)
                             evaluation = get_single_evaluation(
                                 model,
-                                output_ids,
+                                whole_ids,
                                 prefix_len,
                                 target_len,
                                 estimation_mode,
