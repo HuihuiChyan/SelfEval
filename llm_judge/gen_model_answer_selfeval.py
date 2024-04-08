@@ -197,6 +197,7 @@ def get_model_answers(
 
                         elif ensemble_type == "noise":
 
+                            import pdb;pdb.set_trace()
                             evaluation = get_single_evaluation(
                                 model,
                                 output_ids,
