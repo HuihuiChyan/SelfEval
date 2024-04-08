@@ -139,13 +139,14 @@ def get_model_answers(
                 prompt = conv.get_prompt()
 
                 output_tokens, prefix_len, target_len, output_ids = get_single_answer(
-                    tokenizer=tokenizer,
-                    model=model,
-                    prompt=prompt,
-                    conv_stop_token_ids=conv_stop_token_ids,
-                    conv_stop_str=conv_stop_str,
+                    tokenizer,
+                    model,
+                    prompt,
+                    conv_stop_token_ids=conv.stop_token_ids,
+                    conv_stop_str=conv.stop_str,
                     temperature=temperature,
                     max_new_token=max_new_token,
+                    estimation_mode=estimation_mode,
                 )
                 if ensemble_num == 1:
                     evaluation = get_single_evaluation(
