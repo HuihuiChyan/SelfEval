@@ -19,7 +19,7 @@ from fastchat.llm_judge.common import load_questions, temperature_config
 from fastchat.model import load_model, get_conversation_template
 from fastchat.utils import str_to_torch_dtype
 
-from modeling_llama_dropout import LlamaDropoutForCausalLM
+from modeling_llama_noise import LlamaNoiseForCausalLM
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from gen_single_answer_selfeval import get_single_answer, get_single_evaluation
 
@@ -117,8 +117,8 @@ def get_model_answers(
         revision=revision,
         trust_remote_code=True,
     )
-    # Adjust the dropout rate in modeling_llama_dropout.py, default is zero
-    model = LlamaDropoutForCausalLM.from_pretrained(
+    # Adjust the noise rate in modeling_llama_noise.py
+    model = LlamaNoiseForCausalLM.from_pretrained(
         model_path,
         low_cpu_mem_usage=True,
         trust_remote_code=True,
@@ -170,52 +170,73 @@ def get_model_answers(
                 else:
                     ensem_evaluation = []
                     for k in range(ensemble_num):
-                        ensem_conv = copy.deepcopy(conv)
-                        ensem_conv.system_message = system_messages[k]
-                        prompt = ensem_conv.get_prompt()
-                        input_ids = tokenizer([prompt]).input_ids
-                        prefix_len = len(input_ids[0])
+                        
+                        ensemble_type = "noise"
+                        
+                        if ensemble_type == "prompt":
 
-                        ensem_conv.update_last_message(output_tokens)
-                        prompt = ensem_conv.get_prompt()
-                        output_ids = torch.LongTensor(tokenizer([prompt]).input_ids)
-                        target_len = len(output_ids[0]) - prefix_len
+                            ensem_conv = copy.deepcopy(conv)
+                            ensem_conv.system_message = system_messages[k]
+                            prompt = ensem_conv.get_prompt()
+                            input_ids = tokenizer([prompt]).input_ids
+                            prefix_len = len(input_ids[0])
 
-                        evaluation = get_single_evaluation(
-                            model,
-                            output_ids,
-                            prefix_len,
-                            target_len,
-                            estimation_mode,
-                        )
-                        ensem_evaluation.append(evaluation)
+                            ensem_conv.update_last_message(output_tokens)
+                            prompt = ensem_conv.get_prompt()
+                            output_ids = torch.LongTensor(tokenizer([prompt]).input_ids)
+                            target_len = len(output_ids[0]) - prefix_len
 
-                        # torch.manual_seed(i * 10 + k)
-                        # output_tokens, prefix_len, target_len, output_ids = get_single_answer(
-                        #     tokenizer,
-                        #     model,
-                        #     prompt,
-                        #     conv_stop_token_ids=conv.stop_token_ids,
-                        #     conv_stop_str=conv.stop_str,
-                        #     temperature=temperature,
-                        #     max_new_token=max_new_token,
-                        # )
-                        # ensem_conv = copy.deepcopy(conv)
-                        # ensem_conv.update_last_message(output_tokens)
-                        # ensem_prompt = ensem_conv.get_prompt()
+                            evaluation = get_single_evaluation(
+                                model,
+                                output_ids,
+                                prefix_len,
+                                target_len,
+                                estimation_mode,
+                            )
+                            ensem_evaluation.append(evaluation)
 
-                        # output_ids = torch.LongTensor(tokenizer([ensem_prompt]).input_ids)
-                        # target_len = len(output_ids[0]) - prefix_len
+                        elif ensemble_type == "noise":
 
-                        # evaluation = get_single_evaluation(
-                        #     model,
-                        #     output_ids,
-                        #     prefix_len,
-                        #     target_len,
-                        #     estimation_mode,
-                        # )
-                        # ensem_evaluation.append(evaluation)
-                
+                            evaluation = get_single_evaluation(
+                                model,
+                                output_ids,
+                                prefix_len,
+                                target_len,
+                                estimation_mode,
+                                add_noise = True,
+                            )
+                            ensem_evaluation.append(evaluation)
+
+                        elif ensemble_type == "temperature":
+
+                            torch.manual_seed(i * 10 + k)
+                            output_tokens, prefix_len, target_len, output_ids = get_single_answer(
+                                tokenizer,
+                                model,
+                                prompt,
+                                conv_stop_token_ids=conv.stop_token_ids,
+                                conv_stop_str=conv.stop_str,
+                                temperature=temperature,
+                                max_new_token=max_new_token,
+                            )
+                            ensem_conv = copy.deepcopy(conv)
+                            ensem_conv.update_last_message(output_tokens)
+                            ensem_prompt = ensem_conv.get_prompt()
+
+                            output_ids = torch.LongTensor(tokenizer([ensem_prompt]).input_ids)
+                            target_len = len(output_ids[0]) - prefix_len
+
+                            evaluation = get_single_evaluation(
+                                model,
+                                output_ids,
+                                prefix_len,
+                                target_len,
+                                estimation_mode,
+                            )
+                            ensem_evaluation.append(evaluation)
+
+                import pdb;pdb.set_trace()
+
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
                 evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))

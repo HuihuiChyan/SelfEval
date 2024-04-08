@@ -29,9 +29,9 @@ from transformers.utils import (
 from transformers.utils.import_utils import is_torch_fx_available
 from transformers.models.llama.modeling_llama import LlamaModel, LlamaForCausalLM, LlamaConfig, LlamaRMSNorm, LlamaDecoderLayer
 
-DROPOUT = 0.1 # adjust to activate dropout in llama inference
+GAUSSIAN = 0.01
 
-class LlamaDropoutModel(LlamaModel):
+class LlamaNoiseModel(LlamaModel):
 
     def forward(
         self,
@@ -44,7 +44,7 @@ class LlamaDropoutModel(LlamaModel):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
-        dropout: Optional[bool] = False,
+        add_noise: Optional[bool] = False,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -107,8 +107,8 @@ class LlamaDropoutModel(LlamaModel):
             )
 
         # embed positions
-        if dropout:
-            hidden_states = torch.nn.functional.dropout(inputs_embeds, p=DROPOUT, training=True, inplace=False)
+        if add_noise:
+            hidden_states = inputs_embeds + GAUSSIAN * torch.randn(inputs_embeds.size()).to(inputs_embeds)
         else:
             hidden_states = inputs_embeds
 
@@ -142,9 +142,6 @@ class LlamaDropoutModel(LlamaModel):
                 )
 
             hidden_states = layer_outputs[0]
-
-            # if i < 1 and dropout:
-            #     hidden_states = torch.nn.functional.dropout(hidden_states, p=DROPOUT, training=True, inplace=False)
 
             if use_cache:
                 next_decoder_cache = layer_outputs[2 if output_attentions else 1]
@@ -213,12 +210,12 @@ class LlamaDropoutModel(LlamaModel):
 
         return causal_mask
 
-class LlamaDropoutForCausalLM(LlamaForCausalLM):
+class LlamaNoiseForCausalLM(LlamaForCausalLM):
     _tied_weights_keys = ["lm_head.weight"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = LlamaDropoutModel(config)
+        self.model = LlamaNoiseModel(config)
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -237,7 +234,7 @@ class LlamaDropoutForCausalLM(LlamaForCausalLM):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
-        dropout: Optional[bool] = False,
+        add_noise: Optional[bool] = False,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         r"""
         Args:
@@ -281,7 +278,7 @@ class LlamaDropoutForCausalLM(LlamaForCausalLM):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
-            dropout=dropout,
+            add_noise=add_noise,
         )
 
         hidden_states = outputs[0]

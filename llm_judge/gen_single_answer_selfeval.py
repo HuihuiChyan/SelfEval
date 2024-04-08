@@ -106,6 +106,7 @@ def get_single_evaluation(
     prefix_len,
     target_len,
     estimation_mode,
+    add_noise = False,
 ):
     if estimation_mode == "logprobs":
         input_ids = copy.deepcopy(output_ids)
@@ -115,6 +116,7 @@ def get_single_evaluation(
             labels=output_ids,
             output_hidden_states=True,
             output_attentions=True,
+            add_noise=add_noise,
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
@@ -129,6 +131,7 @@ def get_single_evaluation(
             labels=output_ids,
             output_hidden_states=True,
             output_attentions=True,
+            add_noise=add_noise,
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
@@ -144,6 +147,7 @@ def get_single_evaluation(
             labels=output_ids,
             output_hidden_states=True,
             output_attentions=True,
+            add_noise=add_noise,
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
