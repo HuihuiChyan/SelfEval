@@ -144,7 +144,6 @@ def get_single_evaluation(
             labels=output_ids,
             output_hidden_states=True,
             output_attentions=True,
-            add_noise=add_noise,
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
         log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
