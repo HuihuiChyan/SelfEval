@@ -127,7 +127,7 @@ def get_model_answers(
 
     if "ensemble-" in args.estimation_mode:
         estimation_mode = estimation_mode.replace("ensemble-", "")
-        ensemble_num = 10
+        ensemble_num = 7
     else:
         ensemble_num = 1
 
