@@ -20,6 +20,7 @@ def get_single_answer_evaluation(
         max_new_token=max_new_token,
     )
     evaluation = get_single_evaluation(
+        model,
         output_ids,
         prefix_len,
         target_len,
@@ -100,6 +101,7 @@ def get_single_answer(
 
 
 def get_single_evaluation(
+    model,
     output_ids,
     prefix_len,
     target_len,

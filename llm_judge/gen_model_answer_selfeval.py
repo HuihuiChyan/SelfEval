@@ -149,6 +149,7 @@ def get_model_answers(
                 )
                 if ensemble_num == 1:
                     evaluation = get_single_evaluation(
+                        model,
                         output_ids,
                         prefix_len,
                         target_len,
@@ -165,6 +166,7 @@ def get_model_answers(
                         prefix_len = len(input_ids[0])
 
                         evaluation = get_single_evaluation(
+                            model,
                             output_ids,
                             prefix_len,
                             target_len,
