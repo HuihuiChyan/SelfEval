@@ -172,7 +172,7 @@ def get_model_answers(
                             target_len,
                             estimation_mode,
                         )
-                        ensem_evaluation.append(evaluation.tolist())
+                        ensem_evaluation.append(evaluation)
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
