@@ -29,7 +29,7 @@ from transformers.utils import (
 from transformers.utils.import_utils import is_torch_fx_available
 from transformers.models.llama.modeling_llama import LlamaModel, LlamaForCausalLM, LlamaConfig, LlamaRMSNorm, LlamaDecoderLayer
 
-GAUSSIAN = 0.01
+GAUSSIAN = 0.0001
 
 class LlamaNoiseModel(LlamaModel):
 
@@ -106,11 +106,12 @@ class LlamaNoiseModel(LlamaModel):
                 attention_mask, (batch_size, seq_length), inputs_embeds, past_key_values_length
             )
 
-        # embed positions
-        if add_noise:
-            hidden_states = inputs_embeds + GAUSSIAN * torch.randn(inputs_embeds.size()).to(inputs_embeds)
-        else:
-            hidden_states = inputs_embeds
+        # # embed positions
+        # if add_noise:
+        #     hidden_states = inputs_embeds + GAUSSIAN * torch.randn(inputs_embeds.size()).to(inputs_embeds)
+        # else:
+        #     hidden_states = inputs_embeds
+        hidden_states = inputs_embeds + GAUSSIAN * torch.randn(inputs_embeds.size()).to(inputs_embeds)
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
