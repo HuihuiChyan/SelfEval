@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=2,3
 export CUDA_LAUNCH_BLOCKING=1
 MODEL_NAME=vicuna-7b
 BENCH_NAME=vicuna_bench
-ESTIMATION_MODE=attention-minimal
+ESTIMATION_MODE=logprobs-variance
 python -u gen_model_answer_selfeval.py \
     --model-path ../models/$MODEL_NAME \
     --model-id $MODEL_NAME \

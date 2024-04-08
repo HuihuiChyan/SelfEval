@@ -61,10 +61,10 @@ def run_eval(
 
     if use_ray:
         get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
-            get_model_answers
+            get_model_answers_func
         ).remote
     else:
-        get_answers_func = get_model_answers
+        get_answers_func = get_model_answers_func
 
     chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
     ans_handles = []
@@ -87,7 +87,6 @@ def run_eval(
 
     if use_ray:
         ray.get(ans_handles)
-
 
 @torch.inference_mode()
 def get_model_answers(
@@ -115,9 +114,9 @@ def get_model_answers(
         debug=False,
     )
 
-    if "ensemble" in args.estimation_mode:
+    if "ensemble-" in args.estimation_mode:
         estimation_mode = estimation_mode.replace("ensemble-", "")
-        ensemble_num = 10 # By default ensemble 10 times
+        ensemble_num = 10
     else:
         ensemble_num = 1
 
@@ -130,38 +129,52 @@ def get_model_answers(
         evaluations = []
         choices = []
         for i in range(num_choices):
+            torch.manual_seed(i)
             conv = get_conversation_template(model_id)
             turns = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
                 conv.append_message(conv.roles[0], qs)
                 conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
 
-                ensem_evaluation = []
-                for k in range(ensemble_num):
-                    torch.manual_seed(k*10+i)
-                    
-                    ensem_conv = copy.deepcopy(conv)
-                    ensem_conv.system_message = system_messages[k]
-                    prompt = ensem_conv.get_prompt()
-                    input_ids = tokenizer([prompt]).input_ids
-
-                    output_tokens, evaluation = get_single_answer(
-                        tokenizer,
-                        model,
-                        prompt,
-                        conv_stop_token_ids=conv.stop_token_ids,
-                        conv_stop_str=conv.stop_str,
-                        temperature=temperature,
-                        max_new_token=max_new_token,
-                        estimation_mode=estimation_mode,
+                output_tokens, prefix_len, target_len, output_ids = get_single_answer(
+                    tokenizer=tokenizer,
+                    model=model,
+                    prompt=prompt,
+                    conv_stop_token_ids=conv_stop_token_ids,
+                    conv_stop_str=conv_stop_str,
+                    temperature=temperature,
+                    max_new_token=max_new_token,
+                )
+                if ensemble_num == 1:
+                    evaluation = generate_evaluation(
+                        output_ids,
+                        prefix_len,
+                        target_len,
+                        estimation_mode,
                     )
-                    ensem_evaluation.append(evaluation.tolist())
+                    ensem_evaluation = [evaluation]
+                else:
+                    ensem_evaluation = []
+                    for k in range(ensemble_num):
+                        
+                        ensem_conv = copy.deepcopy(conv)
+                        ensem_conv.system_message = system_messages[k]
+                        prompt = ensem_conv.get_prompt()
+                        input_ids = tokenizer([prompt]).input_ids
+                        prefix_len = len(input_ids[0])
 
-                    if k == 0:
-                        conv.update_last_message(output_tokens)
-                        turns.append(output_tokens)
+                        evaluation = generate_evaluation(
+                            output_ids,
+                            prefix_len,
+                            target_len,
+                            estimation_mode,
+                        )
+                        ensem_evaluation.append(evaluation.tolist())
 
+                conv.update_last_message(output_tokens)
+                turns.append(output_tokens)
                 evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
             
             choices.append({"index": i, "turns": turns})

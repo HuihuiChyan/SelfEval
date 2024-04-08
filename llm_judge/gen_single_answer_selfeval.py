@@ -1,6 +1,32 @@
 import copy
 import torch
 
+def get_single_answer_evaluation(
+    tokenizer,
+    model,
+    prompt,
+    conv_stop_token_ids=None,
+    conv_stop_str=None,
+    temperature=0.1,
+    max_new_token=2048,
+):
+    output_tokens, prefix_len, target_len, output_ids = get_single_answer(
+        tokenizer=tokenizer,
+        model=model,
+        prompt=prompt,
+        conv_stop_token_ids=conv_stop_token_ids,
+        conv_stop_str=conv_stop_str,
+        temperature=temperature,
+        max_new_token=max_new_token,
+    )
+    evaluation = generate_evaluation(
+        output_ids,
+        prefix_len,
+        target_len,
+        estimation_mode,
+    )
+    return output_tokens, evaluation
+
 @torch.inference_mode()
 def get_single_answer(
     tokenizer,
@@ -10,7 +36,6 @@ def get_single_answer(
     conv_stop_str=None,
     temperature=0.1,
     max_new_token=2048,
-    estimation_mode="logprobs-entropy",
 ):
     input_ids = tokenizer([prompt]).input_ids
 
@@ -32,8 +57,7 @@ def get_single_answer(
 
     # sequences, attentions, scores
     prefix_len = len(input_ids[0])
-    total_len = len(outputs["sequences"][0])
-    target_len = total_len - prefix_len
+    target_len = len(outputs["sequences"][0]) - prefix_len
     output_ids = outputs["sequences"][0][prefix_len:]
 
     # be consistent with the template's stop_token_ids
@@ -69,85 +93,64 @@ def get_single_answer(
                 output_tokens = output_tokens.replace(special_tok, "")
         else:
             output_tokens = output_tokens.replace(special_token, "")
+    
     output_tokens = output_tokens.strip()
 
+    return output_tokens, prefix_len, target_len, outputs["sequences"]
+
+
+def generate_evaluation(
+    output_ids,
+    prefix_len,
+    target_len,
+    estimation_mode,
+):
     if estimation_mode == "logprobs":
-        output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
         output_ids[0][:prefix_len] = -100 # instruction masking
-        second_outputs = model(
+        outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
             output_hidden_states=True,
             output_attentions=True,
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
-        log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
+        log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
         evaluation = torch.gather(log_probs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1).sum(-1)[0] / target_len
 
     elif estimation_mode == "logprobs-entropy":
-        output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
         output_ids[0][:prefix_len] = -100 # instruction masking
-        second_outputs = model(
+        outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
             output_hidden_states=True,
             output_attentions=True,
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
-        log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
+        log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
-        log_probs = log_probs * second_outputs["logits"]
+        log_probs = log_probs * outputs["logits"]
         evaluation = (log_probs.sum(-1) / target_len).sum(-1)[0] / 32000
 
     elif estimation_mode == "logprobs-variance":
-        output_ids = copy.deepcopy(outputs["sequences"])
         input_ids = copy.deepcopy(output_ids)
         output_ids[0][:prefix_len] = -100 # instruction masking
-        second_outputs = model(
+        outputs = model(
             input_ids=torch.as_tensor(input_ids).cuda(),
             labels=output_ids,
             output_hidden_states=True,
             output_attentions=True,
         )
         shifted_input_ids = torch.roll(input_ids, shifts=-1)
-        log_probs = torch.nn.functional.log_softmax(second_outputs["logits"], dim=-1)
+        log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
         log_probs = torch.var(log_probs, dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
         evaluation = log_probs.sum(-1)[0] / target_len
-
-    elif estimation_mode == "attention-average":
-        evaluation = 0.0
-        instruction_len = outputs['attentions'][0][0].size(-1)
-        for attn in outputs['attentions'][1:]: # (layer_num * [batch_size, head_num, 1, curr_len])
-            attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, curr_len]
-            attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
-
-            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len))).to(attn)
-            attn = attn * instruction_mask
-
-            evaluation += attn.sum(dim=0).sum(dim=0).sum(dim=0) / 32 / attn.size(-1) #/ 32 少除了一个防止下溢出
-        evaluation = evaluation / (len(outputs['attentions'])-1)
-
-    elif estimation_mode == "attention-minimal":
-        evaluation = 0.0
-        instruction_len = outputs['attentions'][0][0].size(-1)
-        for attn in outputs['attentions'][1:]: # (layer_num * [batch_size, head_num, 1, curr_len])
-            attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, curr_len]
-            attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
-
-            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len))).to(attn)
-            attn = attn * instruction_mask
-
-            evaluation += (attn.sum(dim=-1) / attn.size(-1)).max() # logprob为负数，所以取maximal为minimal
-        evaluation = evaluation / (len(outputs['attentions'])-1)
 
     elif estimation_mode == "scores":
         evaluation = torch.gather(torch.vstack(outputs["scores"]), dim=-1, index=output_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len
     
     else:
         raise Exception("Please check your estimation mode!")
-
-    return output_tokens, evaluation
