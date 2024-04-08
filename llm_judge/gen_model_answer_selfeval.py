@@ -172,8 +172,7 @@ def get_model_answers(
                     ensem_evaluation = []
                     for k in range(ensemble_num):
                         
-                        ensemble_type = "noise"
-                        
+                        ensemble_type = "temperature"
                         if ensemble_type == "prompt":
 
                             ensem_conv = copy.deepcopy(conv)
@@ -196,22 +195,9 @@ def get_model_answers(
                             )
                             ensem_evaluation.append(evaluation)
 
-                        elif ensemble_type == "noise":
-
-                            whole_ids = copy.deepcopy(output_ids)
-                            evaluation = get_single_evaluation(
-                                model,
-                                whole_ids,
-                                prefix_len,
-                                target_len,
-                                estimation_mode,
-                                add_noise = True,
-                            )
-                            ensem_evaluation.append(evaluation)
-
                         elif ensemble_type == "temperature":
 
-                            # torch.manual_seed(i * 10 + k)
+                            torch.manual_seed(i * 10 + k)
                             output_tokens, prefix_len, target_len, output_ids = get_single_answer(
                                 tokenizer,
                                 model,
@@ -236,8 +222,6 @@ def get_model_answers(
                                 estimation_mode,
                             )
                             ensem_evaluation.append(evaluation)
-
-                import pdb;pdb.set_trace()
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
