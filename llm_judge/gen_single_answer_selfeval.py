@@ -125,7 +125,7 @@ def get_single_answer(
             attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, curr_len]
             attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
 
-            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len)))
+            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len))).to(attn)
             attn = attn * instruction_mask
 
             evaluation += attn.sum(dim=0).sum(dim=0).sum(dim=0) / 32 / attn.size(-1) #/ 32 少除了一个防止下溢出
@@ -138,7 +138,7 @@ def get_single_answer(
             attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, curr_len]
             attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
 
-            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len)))
+            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len))).to(attn)
             attn = attn * instruction_mask
 
             evaluation += (attn.sum(dim=-1) / attn.size(-1)).max() # logprob为负数，所以取maximal为minimal
