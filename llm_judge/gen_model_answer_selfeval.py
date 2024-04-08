@@ -170,8 +170,6 @@ def get_model_answers(
                         output_ids = torch.LongTensor(tokenizer([prompt]).input_ids)
                         target_len = len(output_ids[0]) - prefix_len
 
-                        import pdb;pdb.set_trace()
-
                         # evaluation = get_single_evaluation(
                         #     model,
                         #     output_ids,
@@ -206,6 +204,8 @@ def get_model_answers(
                             estimation_mode,
                         )
                         ensem_evaluation.append(evaluation)
+
+                import pdb;pdb.set_trace()
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
