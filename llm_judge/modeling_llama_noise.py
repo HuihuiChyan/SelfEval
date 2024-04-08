@@ -29,7 +29,7 @@ from transformers.utils import (
 from transformers.utils.import_utils import is_torch_fx_available
 from transformers.models.llama.modeling_llama import LlamaModel, LlamaForCausalLM, LlamaConfig, LlamaRMSNorm, LlamaDecoderLayer
 
-GAUSSIAN = 0.01
+GAUSSIAN = 0.0001
 
 class LlamaNoiseModel(LlamaModel):
 
