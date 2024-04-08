@@ -125,17 +125,22 @@ def get_single_answer(
             attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, curr_len]
             attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
 
-            import pdb;pdb.set_trace()
-            instruction_mask = torch.cat((torch.zeros(instruction_len) + torch.ones(attn.size(-1)-instruction_len)))
+            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len)))
+            attn = attn * instruction_mask
 
             evaluation += attn.sum(dim=0).sum(dim=0).sum(dim=0) / 32 / attn.size(-1) #/ 32 少除了一个防止下溢出
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
     elif estimation_mode == "attention-minimal":
         evaluation = 0.0
+        instruction_len = outputs['attentions'][0][0].size(-1)
         for attn in outputs['attentions'][1:]: # (layer_num * [batch_size, head_num, 1, curr_len])
             attn = torch.cat(attn, dim=0).squeeze(dim=2) # [layer_num, head_num, curr_len]
             attn = torch.nn.functional.log_softmax(attn, dim=-1) * attn # [layer_num, head_num, curr_len]
+
+            instruction_mask = torch.cat((torch.ones(instruction_len), torch.zeros(attn.size(-1)-instruction_len)))
+            attn = attn * instruction_mask
+
             evaluation += (attn.sum(dim=-1) / attn.size(-1)).max() # logprob为负数，所以取maximal为minimal
         evaluation = evaluation / (len(outputs['attentions'])-1)
 
