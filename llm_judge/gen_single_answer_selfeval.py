@@ -157,4 +157,4 @@ def get_single_evaluation(
     else:
         raise Exception("Please check your estimation mode!")
 
-    return evaluation
+    return evaluation.tolist()
