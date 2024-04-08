@@ -146,7 +146,6 @@ def get_model_answers(
                     conv_stop_str=conv.stop_str,
                     temperature=temperature,
                     max_new_token=max_new_token,
-                    estimation_mode=estimation_mode,
                 )
                 if ensemble_num == 1:
                     evaluation = get_single_evaluation(
