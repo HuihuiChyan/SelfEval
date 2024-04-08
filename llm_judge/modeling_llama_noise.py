@@ -86,7 +86,10 @@ class LlamaNoiseModel(LlamaModel):
             position_ids = position_ids.unsqueeze(0)
 
         if inputs_embeds is None:
-            inputs_embeds = self.embed_tokens(input_ids)
+            try:
+                inputs_embeds = self.embed_tokens(input_ids)
+            except:
+                pdb.set_trace()
 
         if self._use_flash_attention_2:
             # 2d mask is passed through the layers
