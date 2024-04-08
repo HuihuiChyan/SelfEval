@@ -159,17 +159,35 @@ def get_model_answers(
                 else:
                     ensem_evaluation = []
                     for k in range(ensemble_num):
-                        ensem_conv = copy.deepcopy(conv)
-                        ensem_conv.system_message = system_messages[k]
-                        prompt = ensem_conv.get_prompt()
-                        input_ids = tokenizer([prompt]).input_ids
-                        prefix_len = len(input_ids[0])
+                        # ensem_conv = copy.deepcopy(conv)
+                        # ensem_conv.system_message = system_messages[k]
+                        # prompt = ensem_conv.get_prompt()
+                        # input_ids = tokenizer([prompt]).input_ids
+                        # prefix_len = len(input_ids[0])
 
-                        ensem_conv.update_last_message(output_tokens)
-                        prompt = ensem_conv.get_prompt()
-                        output_ids = torch.LongTensor(tokenizer([prompt]).input_ids)
-                        target_len = len(output_ids[0]) - prefix_len
+                        # ensem_conv.update_last_message(output_tokens)
+                        # prompt = ensem_conv.get_prompt()
+                        # output_ids = torch.LongTensor(tokenizer([prompt]).input_ids)
+                        # target_len = len(output_ids[0]) - prefix_len
 
+                        # evaluation = get_single_evaluation(
+                        #     model,
+                        #     output_ids,
+                        #     prefix_len,
+                        #     target_len,
+                        #     estimation_mode,
+                        # )
+                        # ensem_evaluation.append(evaluation)
+                        torch.manual_seed(i * 10 + k)
+                        output_tokens, prefix_len, target_len, output_ids = get_single_answer(
+                            tokenizer,
+                            model,
+                            prompt,
+                            conv_stop_token_ids=conv.stop_token_ids,
+                            conv_stop_str=conv.stop_str,
+                            temperature=temperature,
+                            max_new_token=max_new_token,
+                        )
                         evaluation = get_single_evaluation(
                             model,
                             output_ids,
