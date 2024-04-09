@@ -134,7 +134,7 @@ def get_single_evaluation(
         log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
         log_probs = log_probs * outputs["logits"]
-        evaluation = (log_probs.sum(-1) / target_len).sum(-1)[0] / 32000
+        evaluation = (log_probs.sum(-1) / target_len).sum(-1)[0] / outputs["logits"].size(-1)
 
     elif estimation_mode == "logprobs-variance":
         input_ids = copy.deepcopy(output_ids)
@@ -150,9 +150,6 @@ def get_single_evaluation(
         log_probs = torch.var(log_probs, dim=-1)
         log_probs[output_ids==-100] = 0 # instruction masking
         evaluation = log_probs.sum(-1)[0] / target_len
-
-    elif estimation_mode == "scores":
-        evaluation = torch.gather(torch.vstack(outputs["scores"]), dim=-1, index=output_ids.unsqueeze(-1)).squeeze(-1).sum(-1) / target_len
     
     else:
         raise Exception("Please check your estimation mode!")

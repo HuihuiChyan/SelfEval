@@ -41,6 +41,15 @@ else:
 
     assert len(syslines) == len(lines) == 80
 
+# # exclude the influcence of NaN value
+# import math
+# avearge = []
+# for l in lines:
+#     if not math.isnan(l):
+#         avearge.append(l)
+# avg = sum(avearge) / len(avearge)
+# lines = [l if not math.isnan(l) else avg for l in lines]
+
 pearson = pearsonr(syslines, lines)[0]
 kendalltau = kendalltau(syslines, lines)[0]
 spearman = spearmanr(syslines, lines)[0]
