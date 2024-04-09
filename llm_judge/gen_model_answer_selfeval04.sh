@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=4,5,6,7
 export CUDA_LAUNCH_BLOCKING=1
 MODEL_NAME=llama2-7b-chat
 BENCH_NAME=vicuna_bench
-ESTIMATION_MODE=ensemble-temper-logprobs-variance
+ESTIMATION_MODE=ensemble-prompt-logprobs-variance
 python -u gen_model_answer_selfeval.py \
     --model-path ../models/$MODEL_NAME \
     --model-id $MODEL_NAME \

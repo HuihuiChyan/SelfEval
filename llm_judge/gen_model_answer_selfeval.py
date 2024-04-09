@@ -193,7 +193,7 @@ def get_model_answers(
                                 prompt,
                                 conv_stop_token_ids=conv.stop_token_ids,
                                 conv_stop_str=conv.stop_str,
-                                temperature=0.1,
+                                temperature=temperature,
                                 max_new_token=max_new_token,
                             )
                             ensem_conv = copy.deepcopy(conv)
