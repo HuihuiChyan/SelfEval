@@ -51,7 +51,7 @@ def run_eval(
     estimation_mode,
 ):
     with open("./data/ultra_feedback/evol_instruct.jsonl", "r", encoding="utf-8") as fin:
-        questions = [json.load(line) for line in fin]
+        questions = [json.loads(line) for line in fin]
 
     for qid, ques in enumerate(questions):
         ques["question_id"] = qid
