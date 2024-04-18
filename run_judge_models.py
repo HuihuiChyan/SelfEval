@@ -12,59 +12,6 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, StoppingCriteria
 from build_prompt import create_prompt_predefined
 
-def parse_score_judgelm_pair(review):
-    try:
-        score_pair = review.split('\n')[0]
-        score_pair = score_pair.replace(',', ' ')
-        sp = score_pair.split(' ')
-        return [float(sp[0]), float(sp[1])]
-    except Exception as e:
-        return [1.0, 1.0]
-
-def parse_score_judgelm_single(review):
-    try:
-        score = review.split('\n')[0].strip()
-        return float(score)
-    except Exception as e:
-        # print(f'{e}\nContent: {review}\n'
-        #              'You must manually fix the score pair.')
-        return 1.0
-
-def parse_score_pandalm_pair(review):
-    score = review.split('\n')[0].strip()
-    if score == "1":
-        return [1, 0]
-    elif score == "2":
-        return [0, 1]
-    elif score == "Tie":
-        return [1, 1]
-    else:
-        return [1, 1]
-
-def parse_score_pandalm_single(review):
-    score = review.split('\n')[0].strip()
-    if score in ['1', '2', '3', '4', '5']:
-        return int(score)
-    else:
-        return 5
-
-def parse_score_autoj_pair(raw_output):
-    raw_output = raw_output.strip()
-    pos = raw_output.rfind('final decision is ')
-    pred_label = -1
-    if pos != -1:
-        pred_rest = raw_output[pos + len('final decision is '):].strip().lower()
-        if pred_rest.startswith('response 1'):
-            return [1, 0]
-        elif pred_rest.startswith('response 2'):
-            return [0, 1]
-        elif pred_rest.startswith('tie'):
-            return [1, 1]
-        else:
-            return [-1, -1]
-    else:
-        return [-1, -1]
-
 def parse_score_autoj_single(score_output):
     if "Rating: [[" in score_output:
         pos = score_output.rfind("Rating: [[")
@@ -73,17 +20,6 @@ def parse_score_autoj_single(score_output):
         return float(score_output[pos + len("Rating: [["):pos2].strip())
     else:
         return 0.0
-
-def parse_score_prometheus_pair(review):
-    try:
-        score = review.split('[RESULT]')[1].strip()
-        score_pair = score.replace(',', ' ').replace('\n', ' ').replace('.', ' ')
-        if '  ' in score_pair:
-            score_pair = score_pair.replace('  ', ' ')
-        sp = score_pair.split(' ')
-        return [float(sp[0]), float(sp[1])]
-    except:
-        return [1.0, 1.0]
 
 def parse_score_prometheus_single(review):
     try:
@@ -158,7 +94,7 @@ def main(args):
 
     with open(args.data_path.rstrip(".jsonl")+args.model_type+".jsonl", "w") as fout:
         for i,line in enumerate(pred_scores):
-            fout.write(json.dumps({"question_id": i+80, "evaluations": line}))
+            fout.write(json.dumps({"question_id": i, "evaluations": line}))
 
 
 if __name__ == "__main__":
