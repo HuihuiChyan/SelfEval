@@ -1,3 +1,4 @@
 models/
 cal_correlation_cross.py
 llm_judge/data/ultra_feedback/*
+# llm_judge/*[0-9].sh

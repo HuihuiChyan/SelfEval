@@ -1,7 +1,7 @@
 #!/bin/bash
 export CUDA_VISIBLE_DEVICES=1,2
 export CUDA_LAUNCH_BLOCKING=1
-MODEL_NAME=vicuna-7b
+MODEL_NAME=llama2-7b-chat
 BENCH_NAME=vicuna_bench
 python -u gen_model_answer.py \
     --model-path ../models/$MODEL_NAME \
