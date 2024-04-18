@@ -6,7 +6,9 @@ If you have any quesions, you can contact me with Wechat huanghui20200708.
 
 ## ⚡️ Usage
 ### Preparation
-Please refer to the following command to prepare your environment.
+Please first install [Python 3.10](https://docs.anaconda.com/free/miniconda/miniconda-other-installer-links/#:~:text=Python%203.10-,Miniconda3%20Linux%2064%2Dbit,-127.9%20MiB) and [ray](https://docs.ray.io/en/latest/ray-overview/installation.html#:~:text=Linux%20Python%203.10%20(x86_64)) from the respective links.
+
+Then refer to the following command to prepare your environment.
 ```shell
 pip install -r requirements.txt
 ```

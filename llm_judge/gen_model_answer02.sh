@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=1,2
+export CUDA_VISIBLE_DEVICES=3,4
 export CUDA_LAUNCH_BLOCKING=1
 MODEL_NAME=llama2-7b-chat
 BENCH_NAME=vicuna_bench
