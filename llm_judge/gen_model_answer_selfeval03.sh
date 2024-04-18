@@ -1,7 +1,7 @@
 #!/bin/bash
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export CUDA_LAUNCH_BLOCKING=1
-MODEL_NAME=vicuna-7b
+MODEL_NAME=llama2-7b-chat
 BENCH_NAME=vicuna_bench
 ESTIMATION_MODE=logprobs-entropy
 

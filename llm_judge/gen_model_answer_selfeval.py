@@ -123,10 +123,11 @@ def get_model_answers(
         ensemble_num = 1
 
     for question in tqdm(questions):
-        if question["category"] in temperature_config:
-            temperature = temperature_config[question["category"]]
-        else:
-            temperature = 0.7
+        # if question["category"] in temperature_config:
+        #     temperature = temperature_config[question["category"]]
+        # else:
+        #     temperature = 0.7
+        temperature = 0.7
 
         evaluations = []
         choices = []
