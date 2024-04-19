@@ -121,7 +121,7 @@ def get_model_answers(
         debug=False,
     )
 
-    assert "ensemble-prompt-" in args.estimation_mode:
+    assert "ensemble-prompt-" in args.estimation_mode
     estimation_mode = estimation_mode.replace("ensemble-prompt-", "")
     ensemble_type = "prompt"
     ensemble_num = 7
