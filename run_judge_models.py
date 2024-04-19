@@ -64,20 +64,30 @@ def batched_generation(
 
 def main(args):
     random.seed(42)
-    with open(args.data_path, "r") as fin:
+    with open(args.data_path_question, "r") as fin:
         lines = [line.strip() for line in fin.readlines()]
-        dataset = [json.loads(line) for line in lines]
+        dataset_qes = [json.loads(line) for line in lines]
+        dataset_qes = [line['turns'][0] for line in dataset_qes]
+
+    with open(args.data_path_answer, "r") as fin:
+        lines = [line.strip() for line in fin.readlines()]
+        dataset_ans = [json.loads(line) for line in lines]
+        dataset_ans = [[line['choices'][0]['turns'][0], line['choices'][1]['turns'][0]] for line in dataset_ans]
 
     instruction = create_prompt_predefined(args.model_type)
     prompts = []
 
     import pdb;pdb.set_trace()
 
-    for example in dataset:
-        example["rubric"] = "Please rate the helpfulness, relevance, accuracy, level of details of their responses."
-        prompt = instruction["single"].format(question=example["question1_body"],
+    for qes, ans in zip(dataset_qes, dataset_ans):
+        example = {"rubric": "Please rate the helpfulness, relevance, accuracy, level of details of their responses."}
+        example{"question_body"} = qes[0]
+        example{"answer1_body"} = ans[0]
+        example{"answer2_body"} = ans[1]
+        prompt = instruction["single"].format(question=example["question_body"],
                                               rubric=example["rubric"],
-                                              answer=example["answer1_body"])     
+                                              answer1=example["answer1_body"],
+                                              answer2=example["answer2_body"])     
         prompts.append(prompt)
     
     import pdb;pdb.set_trace()
@@ -122,7 +132,12 @@ if __name__ == "__main__":
         help="Batch size for evaluation."
     )
     parser.add_argument(
-        "--data-path",
+        "--data-path-question",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--data-path-answer",
         type=str,
         default=None,
     )
