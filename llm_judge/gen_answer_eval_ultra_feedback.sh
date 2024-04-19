@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 export CUDA_LAUNCH_BLOCKING=1
 MODEL_NAME=vicuna-7b
 BENCH_NAME=ultra_feedback
-ESTIMATION_MODE=logprobs-entropy
+ESTIMATION_MODE=ensemble-prompt-logprobs-entropy
 python -u gen_answer_eval_ultra_feedback.py \
     --model-path ../models/$MODEL_NAME \
     --model-id $MODEL_NAME \
