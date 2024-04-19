@@ -36,6 +36,65 @@ system_messages = [
     "The following is a conversation between a human and an AI assistant. The human and the AI assistant take turns chatting. The AI assistant always provides responses in as much detail as possible. The AI assistant always declines to engage with topics, questions and instructions related to unethical, controversial, or sensitive issues.",
 ]
 
+def run_eval(
+    model_path,
+    model_id,
+    question_file,
+    question_begin,
+    question_end,
+    answer_file,
+    max_new_token,
+    num_choices,
+    num_gpus_per_model,
+    num_gpus_total,
+    max_gpu_memory,
+    dtype,
+    revision,
+    estimation_mode,
+):
+    dataset = load_dataset("parquet", data_files={'train': 'data/ultra_feedback/train_prefs-00000-of-00001.parquet'})
+    dataset = dataset['train']['prompt'][:10]
+
+    questions = []
+    for qid, ques in enumerate(questions):
+        question = {}
+        question["question_id"] = qid
+        question["instruction"] = ques
+        questions.append(question)
+
+    # Split the question file into `num_gpus` files
+    assert num_gpus_total % num_gpus_per_model == 0
+    use_ray = num_gpus_total // num_gpus_per_model > 1
+
+    if use_ray:
+        get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
+            get_model_answers
+        ).remote
+    else:
+        get_answers_func = get_model_answers
+
+    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
+    ans_handles = []
+    for i in range(0, len(questions), chunk_size):
+        ans_handles.append(
+            get_answers_func(
+                model_path,
+                model_id,
+                questions[i : i + chunk_size],
+                answer_file,
+                max_new_token,
+                num_choices,
+                num_gpus_per_model,
+                max_gpu_memory,
+                dtype=dtype,
+                revision=revision,
+                estimation_mode=estimation_mode,
+            )
+        )
+
+    if use_ray:
+        ray.get(ans_handles)
+
 @torch.inference_mode()
 def get_model_answers(
     model_path,
@@ -62,46 +121,71 @@ def get_model_answers(
         debug=False,
     )
 
-    prompts = []
+    assert "ensemble-prompt-" in args.estimation_mode:
+    estimation_mode = estimation_mode.replace("ensemble-prompt-", "")
+    ensemble_type = "prompt"
+    ensemble_num = 7
+
     for question in tqdm(questions):
+        # if question["category"] in temperature_config:
+        #     temperature = temperature_config[question["category"]]
+        # else:
+        temperature = 0.5 # set temperature as 0.5 for all questions
 
-        evaluations = []
+        evaluations_ent = []
+        evaluations_var = []
+        choices = []
+        for i in range(num_choices):
+            torch.manual_seed(i)
+            conv = get_conversation_template(model_id)
+            turns = []
+            for j in range(len(question["turns"])):
+                qs = question["turns"][j]
+                conv.append_message(conv.roles[0], qs)
+                conv.append_message(conv.roles[1], None)
+                prompt = conv.get_prompt()
 
-        conv = get_conversation_template(model_id)
-        turns = []
+                output_tokens, prefix_len, target_len, output_ids = get_single_answer(
+                    tokenizer,
+                    model,
+                    prompt,
+                    conv_stop_token_ids=conv.stop_token_ids,
+                    conv_stop_str=conv.stop_str,
+                    temperature=temperature,
+                    max_new_token=max_new_token,
+                )
 
-        qs = question["instruction"]
-        conv.append_message(conv.roles[0], qs)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+                ensem_evaluation_ent = []
+                ensem_evaluation_var = []
+                for k in range(ensemble_num):
 
-        for k in range(ensemble_num):
+                    ensem_conv = copy.deepcopy(conv)
+                    ensem_conv.system_message = system_messages[k]
+                    prompt = ensem_conv.get_prompt()
+                    input_ids = tokenizer([prompt]).input_ids
+                    prefix_len = len(input_ids[0])
 
-            ensem_conv = copy.deepcopy(conv)
-            ensem_conv.system_message = system_messages[k]
-            prompt = ensem_conv.get_prompt()
-            input_ids = tokenizer([prompt]).input_ids
-            prefix_len = len(input_ids[0])
+                    ensem_conv.update_last_message(output_tokens)
+                    prompt = ensem_conv.get_prompt()
+                    output_ids = torch.LongTensor(tokenizer([prompt]).input_ids)
+                    target_len = len(output_ids[0]) - prefix_len
 
-            ensem_conv.update_last_message(output_tokens)
-            prompt = ensem_conv.get_prompt()
-            output_ids = torch.LongTensor(tokenizer([prompt]).input_ids)
-            target_len = len(output_ids[0]) - prefix_len
+                    evaluation = get_single_evaluation(
+                        model,
+                        output_ids,
+                        prefix_len,
+                        target_len,
+                        estimation_mode,
+                    )
+                    ensem_evaluation_ent.append(evaluation["entropy"])
+                    ensem_evaluation_var.append(evaluation["variance"])
 
-            evaluation = get_single_evaluation(
-                model,
-                output_ids,
-                prefix_len,
-                target_len,
-                estimation_mode,
-            )
-            ensem_evaluation.append(evaluation)
-
-        conv.update_last_message(output_tokens)
-        turns.append(output_tokens)
-        evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
-
-        choices.append({"index": i, "turns": turns})
+                conv.update_last_message(output_tokens)
+                turns.append(output_tokens)
+                evaluations_ent.append(sum(ensem_evaluation_ent)/len(ensem_evaluation_ent))
+                evaluations_var.append(sum(ensem_evaluation_var)/len(ensem_evaluation_var))
+            
+            choices.append({"index": i, "turns": turns})
 
         # Dump answers
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
@@ -111,7 +195,8 @@ def get_model_answers(
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
                 "choices": choices,
-                "evaluations": evaluations,
+                "evaluations_ent": evaluations_ent,
+                "evaluations_var": evaluations_var,
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json) + "\n")
@@ -203,7 +288,13 @@ if __name__ == "__main__":
         help="The model revision to load.",
     )
 
+
     args = parser.parse_args()
+
+    if args.num_gpus_total // args.num_gpus_per_model > 1:
+        import ray
+
+        ray.init()
 
     question_file = f"data/{args.bench_name}/question.jsonl"
     if args.answer_file:
@@ -212,91 +303,6 @@ if __name__ == "__main__":
         answer_file = f"data/{args.bench_name}/model_answer/{args.model_id}-{args.estimation_mode}.jsonl"
 
     print(f"Output to {answer_file}")
-
-    dataset = load_dataset("parquet", data_files={'train': 'data/ultra_feedback/train_prefs-00000-of-00001.parquet'})
-    dataset = dataset['train']['prompt'][:100]
-
-    questions = []
-    for qid, ques in enumerate(dataset):
-        question = {}
-        question["question_id"] = qid
-        question["instruction"] = ques
-        questions.append(question)
-
-    assert "ensemble-prompt-" in args.estimation_mode
-    args.estimation_mode = args.estimation_mode.replace("ensemble-prompt-", "")
-    ensemble_type = "prompt"
-    ensemble_num = len(system_messages)
-
-    prompts = []
-    for question in tqdm(questions):
-        conv = get_conversation_template(args.model_id)
-
-        qs = question["instruction"]
-        conv.append_message(conv.roles[0], qs)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-        prompts.append(prompt)
-
-    # set temperature as 0.5 for all questions
-    sampling_params = SamplingParams(temperature=0.5, top_p=0.95)
-
-    llm = LLM(model=args.model_path)
-    outputs1 = llm.generate(prompts, sampling_params)
-    outputs2 = llm.generate(prompts, sampling_params)
-
-    import pdb;pdb.set_trace()
-
-    # Dump answers
-    os.makedirs(os.path.dirname(answer_file), exist_ok=True)
-    with open(os.path.expanduser(answer_file), "w") as fout:
-        ans_json = {
-            "question_id": question["question_id"],
-            "answer_id": shortuuid.uuid(),
-            "model_id": model_id,
-            "choices": choices,
-            "evaluations": evaluations,
-            "tstamp": time.time(),
-        }
-        fout.write(json.dumps(ans_json) + "\n")
-
-    if args.num_gpus_total // args.num_gpus_per_model > 1:
-        import ray
-
-        ray.init()
-
-    # Split the question file into `num_gpus` files
-    assert num_gpus_total % num_gpus_per_model == 0
-    use_ray = num_gpus_total // num_gpus_per_model > 1
-
-    if use_ray:
-        get_answers_func = ray.remote(num_gpus=num_gpus_per_model)(
-            get_model_answers
-        ).remote
-    else:
-        get_answers_func = get_model_answers
-
-    chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
-    ans_handles = []
-    for i in range(0, len(questions), chunk_size):
-        ans_handles.append(
-            get_answers_func(
-                model_path,
-                model_id,
-                questions[i : i + chunk_size],
-                answer_file,
-                max_new_token,
-                num_choices,
-                num_gpus_per_model,
-                max_gpu_memory,
-                dtype=dtype,
-                revision=revision,
-                estimation_mode=estimation_mode,
-            )
-        )
-
-    if use_ray:
-        ray.get(ans_handles)
 
     run_eval(
         model_path=args.model_path,
