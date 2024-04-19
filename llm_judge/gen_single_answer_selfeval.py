@@ -107,6 +107,11 @@ def get_single_evaluation(
     target_len,
     estimation_mode,
 ):
+    # output_ids: The predicted ids consist of both instruction and response, shape is [1, sequence_len]
+    # prefix_len: The length of the instruction part
+    # target_len: The length of the response part
+    # estimation_mode: Choose from logprobs, logprobs-entropy and logprobs-variance
+
     if estimation_mode == "logprobs":
         input_ids = copy.deepcopy(output_ids)
         output_ids[0][:prefix_len] = -100 # instruction masking
@@ -116,10 +121,11 @@ def get_single_evaluation(
             output_hidden_states=True,
             output_attentions=True,
         )
-        shifted_input_ids = torch.roll(input_ids, shifts=-1)
-        log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
-        log_probs[output_ids==-100] = 0 # instruction masking
-        evaluation = torch.gather(log_probs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1).sum(-1)[0] / target_len
+        shifted_input_ids = torch.roll(input_ids, shifts=-1) # the predict ids should be shifted left
+        logprobs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
+        logprobs[output_ids==-100] = 0 # instruction masking
+        evaluation = torch.gather(logprobs, dim=-1, index=shifted_input_ids.unsqueeze(-1)).squeeze(-1)
+        evaluation = evaluation.sum(-1)[0] / target_len # averaged on target length
 
     elif estimation_mode == "logprobs-entropy":
         input_ids = copy.deepcopy(output_ids)
@@ -130,11 +136,12 @@ def get_single_evaluation(
             output_hidden_states=True,
             output_attentions=True,
         )
-        shifted_input_ids = torch.roll(input_ids, shifts=-1)
-        log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
-        log_probs[output_ids==-100] = 0 # instruction masking
-        log_probs = log_probs * outputs["logits"]
-        evaluation = (log_probs.sum(-1) / target_len).sum(-1)[0] / outputs["logits"].size(-1)
+        shifted_input_ids = torch.roll(input_ids, shifts=-1) # the predict ids should be shifted left
+        logprobs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
+        logprobs[output_ids==-100] = 0 # instruction masking
+        # The original entropy has a minus sign, but we remove it to keep the positive correlation
+        logprobs_entropy = torch.mean(logprobs * outputs["logits"])
+        evaluation = logprobs_entropy.sum(-1)[0] / target_len # averaged on target length
 
     elif estimation_mode == "logprobs-variance":
         input_ids = copy.deepcopy(output_ids)
@@ -145,11 +152,11 @@ def get_single_evaluation(
             output_hidden_states=True,
             output_attentions=True,
         )
-        shifted_input_ids = torch.roll(input_ids, shifts=-1)
-        log_probs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
-        log_probs = torch.var(log_probs, dim=-1)
-        log_probs[output_ids==-100] = 0 # instruction masking
-        evaluation = log_probs.sum(-1)[0] / target_len
+        shifted_input_ids = torch.roll(input_ids, shifts=-1) # the predict ids should be shifted left
+        logprobs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
+        logprobs_variance = torch.var(logprobs, dim=-1)
+        logprobs_variance[output_ids==-100] = 0 # instruction masking
+        evaluation = logprobs_variance.sum(-1)[0] / target_len # averaged on target length
     
     else:
         raise Exception("Please check your estimation mode!")

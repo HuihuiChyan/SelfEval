@@ -4,7 +4,7 @@ import argparse
 from scipy.stats import pearsonr, spearmanr, kendalltau
 
 judge_file = "./llama2-7b-chat-logprobs-entropy-auto-j.jsonl"
-eval_file1 = "/Users/dxm/Desktop/SelfEval/llm_judge/data/vicuna_bench/model_answer/llama2-7b-chat-logprobs-variance.jsonl"
+eval_file1 = "/Users/dxm/Desktop/SelfEval/llm_judge/data/vicuna_bench/model_answer/llama2-7b-chat-logprobs-entropy.jsonl"
 
 with open(judge_file, "r") as fsys:
     judge_lines = [json.loads(line.strip())["prometheus_score"] for line in fsys.readlines()]

@@ -19,7 +19,7 @@ def parse_score_autoj_single(score_output):
         assert pos != -1 and pos2 != -1
         return float(score_output[pos + len("Rating: [["):pos2].strip())
     else:
-        return 0.0
+        return 5.0
 
 def parse_score_prometheus_single(review):
     try:
@@ -27,32 +27,9 @@ def parse_score_prometheus_single(review):
         if score in ["1", "2", "3", "4", "5"]:
             return int(score)
         else:
-            return 1
+            return 3
     except:
-        return 1
-    # try:
-    #     score = re.search(r"Assistant 1: [0-9]+\nAssistant 2: [0-9]+", review).group()
-    #     score = score.lstrip("Assistant 1:")
-    #     sp = score.split("\nAssistant 2: ")
-    #     return [float(sp[0]), float(sp[1])]
-    # except:
-    #     print(review)
-    #     return [1.0, 1.0]
-
-def parse_score_autoj_pair(review):
-    review = review.strip()
-    pos = review.rfind('final decision is ')
-    pred_label = -1
-    if pos != -1:
-        pred_rest = review[pos + len('final decision is '):].strip().lower()
-        if pred_rest.startswith('response 1'):
-            return [1, 0]
-        elif pred_rest.startswith('response 2'):
-            return [0, 1]
-        else:
-            return [-1, -1]
-    else:
-        return [-1, -1]
+        return 3
 
 @torch.inference_mode()
 def batched_generation(
@@ -80,14 +57,14 @@ def batched_generation(
 def main(args):
     random.seed(42)
     with open(args.data_path_question, "r") as fin:
-        lines = [line.strip() for line in fin.readlines()]
-        dataset_qes = [json.loads(line) for line in lines]
-        dataset_qes = [line['turns'][0] for line in dataset_qes]
+        lines_qes = [line.strip() for line in fin.readlines()]
+        lines_qes = [json.loads(line) for line in lines_qes]
+        dataset_qes = [line['turns'][0] for line in lines_qes]
 
     with open(args.data_path_answer, "r") as fin:
-        lines = [line.strip() for line in fin.readlines()]
-        dataset_ans = [json.loads(line) for line in lines]
-        dataset_ans = [[line['choices'][0]['turns'][0], line['choices'][1]['turns'][0]] for line in dataset_ans]
+        lines_ans = [line.strip() for line in fin.readlines()]
+        lines_ans = [json.loads(line) for line in lines_ans]
+        dataset_ans = [[line['choices'][0]['turns'][0], line['choices'][1]['turns'][0]] for line in lines_ans]
 
     instruction = create_prompt_predefined(args.model_type)
     prompts = []
@@ -97,10 +74,13 @@ def main(args):
         example["question_body"] = qes[0]
         example["answer1_body"] = ans[0]
         example["answer2_body"] = ans[1]
-        prompt = instruction["multi"].format(question_body=example["question_body"],
-                                              rubric=example["rubric"],
-                                              answer1_body=example["answer1_body"],
-                                              answer2_body=example["answer2_body"])        
+        prompt = instruction.format(question=example["question_body"],
+                                    rubric=example["rubric"],
+                                    answer=example["answer1_body"])
+        prompts.append(prompt)
+        prompt = instruction.format(question=example["question_body"],
+                                    rubric=example["rubric"],
+                                    answer=example["answer2_body"])   
         prompts.append(prompt)
 
     predictions = batched_generation(args.model_name_or_path, prompts, 
@@ -110,14 +90,12 @@ def main(args):
 
     if args.model_type == "auto-j":
         pred_scores = [parse_score_autoj_pair(pred) for pred in predictions]
+    elif args.model_type == "prometheus":
+        pred_scores = [parse_score_prometheus_pair(pred) for pred in predictions]
 
-    with open(args.data_path_answer, "r") as fin:
-        lines = [line.strip() for line in fin.readlines()]
-        dataset_ans = [json.loads(line) for line in lines]
-
-    with open(args.data_path_answer.rstrip(".jsonl")+args.model_type+".jsonl", "w") as fout:
-        for line, score in zip(dataset_ans, pred_scores):
-            line["prometheus_score"] = score
+    with open(args.data_path_answer.rstrip(".jsonl")+"-"args.model_type+".jsonl", "w") as fout:
+        for line, score in zip(lines_ans, pred_scores):
+            line["judge_score"] = score
             fout.write(json.dumps(line)+"\n")
 
 
@@ -154,7 +132,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max-new-token",
         type=int,
-        default=2048,
+        default=1024,
         help="The maximum number of new tokens.",
     )
     parser.add_argument(
