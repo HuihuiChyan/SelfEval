@@ -56,7 +56,7 @@ def run_eval(
     dataset = dataset['train']['prompt'][:10]
 
     questions = []
-    for qid, ques in enumerate(questions):
+    for qid, ques in enumerate(dataset):
         question = {}
         question["question_id"] = qid
         question["instruction"] = ques
@@ -72,8 +72,6 @@ def run_eval(
         ).remote
     else:
         get_answers_func = get_model_answers
-    
-    import pdb;pdb.set_trace()
 
     chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
     ans_handles = []
