@@ -71,8 +71,8 @@ def main(args):
 
     with open(args.data_path_answer, "r") as fin:
         lines = [line.strip() for line in fin.readlines()]
-        dataset_ans = [json.loads(line) for line in lines]
-        dataset_ans = [[line['choices'][0]['turns'][0], line['choices'][1]['turns'][0]] for line in dataset_ans]
+        dataset = [json.loads(line) for line in lines]
+        dataset_ans = [[line['choices'][0]['turns'][0], line['choices'][1]['turns'][0]] for line in dataset]
 
     instruction = create_prompt_predefined(args.model_type)
     prompts = []
@@ -92,8 +92,6 @@ def main(args):
                                               rubric=example["rubric"],
                                               answer=example["answer2_body"])     
         prompts.append(prompt)
-    
-    import pdb;pdb.set_trace()
 
     predictions = batched_generation(args.model_name_or_path, prompts, 
                                      max_new_token=args.max_new_token, 
@@ -108,10 +106,13 @@ def main(args):
         pred_scores = [parse_score_pandalm_single(pred) for pred in predictions]
     elif args.model_type == "prometheus":
         pred_scores = [parse_score_prometheus_single(pred) for pred in predictions]
+    
+    pred_scores = [(line[0], line[1]) for line in zip(pred_scores[0::2], pred_scores[1::2])]
 
-    with open(args.data_path.rstrip(".jsonl")+args.model_type+".jsonl", "w") as fout:
-        for i,line in enumerate(pred_scores):
-            fout.write(json.dumps({"question_id": i, "evaluations": line}))
+    with open(args.data_path_answer.rstrip(".jsonl")+args.model_type+".jsonl", "w") as fout:
+        for line, score in zip(dataset, pred_scores):
+            line["prometheus_score"] = score
+            fout.write(json.dumps(line))
 
 
 if __name__ == "__main__":
