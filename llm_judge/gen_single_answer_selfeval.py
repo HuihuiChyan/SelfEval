@@ -158,6 +158,29 @@ def get_single_evaluation(
         logprobs_variance[output_ids==-100] = 0 # instruction masking
         evaluation = logprobs_variance.sum(-1)[0] / target_len # averaged on target length
     
+    elif estimation_mode == "logprobs-both":
+        input_ids = copy.deepcopy(output_ids)
+        output_ids[0][:prefix_len] = -100 # instruction masking
+        outputs = model(
+            input_ids=torch.as_tensor(input_ids).cuda(),
+            labels=output_ids,
+            output_hidden_states=True,
+            output_attentions=True,
+        )
+        shifted_input_ids = torch.roll(input_ids, shifts=-1) # the predict ids should be shifted left
+        logprobs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
+
+        logprobs_variance = torch.var(logprobs, dim=-1)
+        logprobs_variance[output_ids==-100] = 0 # instruction masking
+        evaluation_var = logprobs_variance.sum(-1)[0] / target_len # averaged on target length
+
+        logprobs[output_ids==-100] = 0 # instruction masking
+        # The original entropy has a minus sign, but we remove it to keep the positive correlation
+        logprobs_entropy = torch.mean(logprobs * outputs["logits"])
+        evaluation_ent = logprobs_entropy.sum(-1)[0] / target_len # averaged on target length
+
+        return {"entropy": evaluation_ent, "variance": evaluation_var}
+    
     else:
         raise Exception("Please check your estimation mode!")
 
