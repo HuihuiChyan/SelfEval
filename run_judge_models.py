@@ -86,8 +86,11 @@ def main(args):
         example["answer2_body"] = ans[1]
         prompt = instruction["single"].format(question=example["question_body"],
                                               rubric=example["rubric"],
-                                              answer1=example["answer1_body"],
-                                              answer2=example["answer2_body"])     
+                                              answer=example["answer1_body"])     
+        prompts.append(prompt)
+        prompt = instruction["single"].format(question=example["question_body"],
+                                              rubric=example["rubric"],
+                                              answer=example["answer2_body"])     
         prompts.append(prompt)
     
     import pdb;pdb.set_trace()
