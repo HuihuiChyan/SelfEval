@@ -221,7 +221,7 @@ if __name__ == "__main__":
         question["question_id"] = qid
         question["instruction"] = ques
 
-    assert "ensemble-prompt-" in args.estimation_mode:
+    assert "ensemble-prompt-" in args.estimation_mode
     args.estimation_mode = args.estimation_mode.replace("ensemble-prompt-", "")
     ensemble_type = "prompt"
     ensemble_num = len(system_messages)
