@@ -97,10 +97,10 @@ def main(args):
         example["question_body"] = qes[0]
         example["answer1_body"] = ans[0]
         example["answer2_body"] = ans[1]
-        prompt = instruction["multi"].format(question=example["question_body"],
+        prompt = instruction["multi"].format(question_body=example["question_body"],
                                               rubric=example["rubric"],
-                                              answer1=example["answer1_body"],
-                                              answer2=example["answer2_body"])        
+                                              answer1_body=example["answer1_body"],
+                                              answer2_body=example["answer2_body"])        
         prompts.append(prompt)
 
     predictions = batched_generation(args.model_name_or_path, prompts, 
