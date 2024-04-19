@@ -87,6 +87,8 @@ def main(args):
                                      max_new_token=args.max_new_token, 
                                      temperature=args.temperature,
                                      top_p=args.top_p)
+    
+    import pdb;pdb.set_trace()
 
     if args.model_type == "auto-j":
         pred_scores = [parse_score_autoj_single(pred) for pred in predictions]

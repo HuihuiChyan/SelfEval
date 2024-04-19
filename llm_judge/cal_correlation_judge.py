@@ -11,18 +11,32 @@ with open(judge_file, "r") as fsys:
     new_judge_lines = []
     for line in judge_lines:
         new_judge_lines.append(line[0])
-        new_judge_lines.append(line[1])
+        # new_judge_lines.append(line[1])
 
 with open(eval_file1, "r") as feva:
     eval_lines = [json.loads(line.strip())["evaluations"] for line in feva.readlines()]
     new_eval_lines = []
     for line in eval_lines:
         new_eval_lines.append(line[0])
-        new_eval_lines.append(line[1])
+        # new_eval_lines.append(line[1])
 
-pearson = pearsonr(new_judge_lines, new_eval_lines)[0]
-kendalltau = kendalltau(new_judge_lines, new_eval_lines)[0]
-spearman = spearmanr(new_judge_lines, new_eval_lines)[0]
+with open("./data/" + "vicuna_bench" + "/model_judgment/gpt-4_single.jsonl", "r") as fsys:
+    lines = [json.loads(line.strip()) for line in fsys.readlines()]
+    syslines = []
+    for line in lines:
+        if line["model"] == "llama2-7b-chat":
+            syslines.append(line)
+
+syslines = sorted(syslines, key=lambda d: d['turn'])
+syslines = sorted(syslines, key=lambda d: d['question_id'])
+
+syslines = [line["score"] for line in syslines]
+
+pearson = pearsonr(new_eval_lines, syslines)[0]
+kendalltau = kendalltau(new_eval_lines, syslines)[0]
+spearman = spearmanr(new_eval_lines, syslines)[0]
+
+import pdb;pdb.set_trace()
 
 # add metrics to dict
 metrics_dict = {
