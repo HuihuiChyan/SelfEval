@@ -114,7 +114,7 @@ def main(args):
     with open(args.data_path_answer.rstrip(".jsonl")+args.model_type+".jsonl", "w") as fout:
         for line, score in zip(dataset, pred_scores):
             line["prometheus_score"] = score
-            fout.write(json.dumps(line))
+            fout.write(json.dumps(line)+"\n")
 
 
 if __name__ == "__main__":
