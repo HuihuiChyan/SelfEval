@@ -217,7 +217,7 @@ if __name__ == "__main__":
     dataset = dataset['train']['prompt']
 
     questions = []
-    for qid, ques in enumerate(questions):
+    for qid, ques in enumerate(dataset):
         question = {}
         question["question_id"] = qid
         question["instruction"] = ques
