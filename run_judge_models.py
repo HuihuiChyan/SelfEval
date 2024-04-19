@@ -92,6 +92,8 @@ def main(args):
         pred_scores = [parse_score_autoj_single(pred) for pred in predictions]
     elif args.model_type == "prometheus":
         pred_scores = [parse_score_prometheus_single(pred) for pred in predictions]
+    
+    pred_scores = [[line[0], line[1]] for line in zip(pred_scores[::2], pred_scores[1::2])]
 
     with open(args.data_path_answer.rstrip(".jsonl")+"-"+args.model_type+".jsonl", "w") as fout:
         for line, score in zip(lines_ans, pred_scores):
