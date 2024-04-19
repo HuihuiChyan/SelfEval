@@ -68,7 +68,7 @@ def main(args):
         lines = [line.strip() for line in fin.readlines()]
         dataset = [json.loads(line) for line in lines]
 
-    instruction = create_prompt_predefined(args.model_type, args.data_type)
+    instruction = create_prompt_predefined(args.model_type)
     prompts = []
 
     for example in dataset:
