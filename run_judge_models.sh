@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=1
 python -u run_judge_models.py \
     --model-name-or-path "./models/Auto-J-13B" \
     --model-type "auto-j" \
