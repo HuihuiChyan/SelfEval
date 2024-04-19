@@ -11,21 +11,23 @@ def create_prompt_predefined(model_type):
 # [END DATA]
 
 # Write critiques for this response. After that, you should give a final rating for the response on a scale of 1 to 10 by strictly following this format: "[[rating]]", for example: "Rating: [[5]]". [/INST]"""
-        instruction_multi = """[INST] Write critiques for submitted responses on a given user's queries, and grade the responses:
-  
-# [BEGIN DATA]
-# ***
-# [Query1]: {question_1}
-# ***
-# [Response1]: {answer_1}
-# ***
-# [Query2]: {question_2}
-# ***
-# [Response2]: {answer_2}
-# ***
-# [END DATA]
+        instruction_multi = """[INST] You are assessing two submitted responses on a given user's query and judging which response is better. Here is the data:
 
-# Write critiques for the responses. After that, you should give a final rating for the response on a scale of 1 to 10 by strictly following this format: "[[rating]]", for example: "Rating: [[5]]". [/INST]"""
+[BEGIN DATA]
+***
+[Query]: {question_body}
+***
+[Response 1]: {answer1_body}
+***
+[Response 2]: {answer2_body}
+***
+[END DATA]
+
+Here are the instructions to assess and compare the two responses:
+
+1. Pinpoint the key factors to distinguish these two responses.
+2. Conclude your comparison by providing a final decision on which response is better. Begin your final decision statement with "So, the final decision is Response 1 / Response 2". Ensure that your decision aligns coherently with the comprehensive evaluation and comparison you've provided. [/INST]"""
+    
     elif model_type == "prometheus":
         instruction_single = """[INST] <<SYS>>
 You are a fair evaluator language model.

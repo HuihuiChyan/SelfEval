@@ -39,6 +39,21 @@ def parse_score_prometheus_single(review):
     #     print(review)
     #     return [1.0, 1.0]
 
+def parse_score_autoj_pair(review):
+    review = review.strip()
+    pos = review.rfind('final decision is ')
+    pred_label = -1
+    if pos != -1:
+        pred_rest = review[pos + len('final decision is '):].strip().lower()
+        if pred_rest.startswith('response 1'):
+            return [1, 0]
+        elif pred_rest.startswith('response 2'):
+            return [0, 1]
+        else:
+            return [-1, -1]
+    else:
+        return [-1, -1]
+
 @torch.inference_mode()
 def batched_generation(
     model_path,
@@ -71,26 +86,21 @@ def main(args):
 
     with open(args.data_path_answer, "r") as fin:
         lines = [line.strip() for line in fin.readlines()]
-        dataset = [json.loads(line) for line in lines]
-        dataset_ans = [[line['choices'][0]['turns'][0], line['choices'][1]['turns'][0]] for line in dataset]
+        dataset_ans = [json.loads(line) for line in lines]
+        dataset_ans = [[line['choices'][0]['turns'][0], line['choices'][1]['turns'][0]] for line in dataset_ans]
 
     instruction = create_prompt_predefined(args.model_type)
     prompts = []
-
-    import pdb;pdb.set_trace()
 
     for qes, ans in zip(dataset_qes, dataset_ans):
         example = {"rubric": "Please rate the helpfulness, relevance, accuracy, level of details of their responses."}
         example["question_body"] = qes[0]
         example["answer1_body"] = ans[0]
         example["answer2_body"] = ans[1]
-        prompt = instruction["single"].format(question=example["question_body"],
+        prompt = instruction["multi"].format(question=example["question_body"],
                                               rubric=example["rubric"],
-                                              answer=example["answer1_body"])     
-        prompts.append(prompt)
-        prompt = instruction["single"].format(question=example["question_body"],
-                                              rubric=example["rubric"],
-                                              answer=example["answer2_body"])     
+                                              answer1=example["answer1_body"]
+                                              answer2=example["answer2_body"])        
         prompts.append(prompt)
 
     predictions = batched_generation(args.model_name_or_path, prompts, 
@@ -98,16 +108,8 @@ def main(args):
                                      temperature=args.temperature,
                                      top_p=args.top_p)
 
-    if args.model_type == "judgelm":
-        pred_scores = [parse_score_judgelm_single(pred) for pred in predictions]
-    elif args.model_type == "auto-j":
-        pred_scores = [parse_score_autoj_single(pred) for pred in predictions]
-    elif args.model_type == "pandalm":
-        pred_scores = [parse_score_pandalm_single(pred) for pred in predictions]
-    elif args.model_type == "prometheus":
-        pred_scores = [parse_score_prometheus_single(pred) for pred in predictions]
-    
-    pred_scores = [(line[0], line[1]) for line in zip(pred_scores[0::2], pred_scores[1::2])]
+    if args.model_type == "auto-j":
+        pred_scores = [parse_score_autoj_pair(pred) for pred in predictions]
 
     with open(args.data_path_answer.rstrip(".jsonl")+args.model_type+".jsonl", "w") as fout:
         for line, score in zip(dataset, pred_scores):
