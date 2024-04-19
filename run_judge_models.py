@@ -111,8 +111,12 @@ def main(args):
     if args.model_type == "auto-j":
         pred_scores = [parse_score_autoj_pair(pred) for pred in predictions]
 
+    with open(args.data_path_answer, "r") as fin:
+        lines = [line.strip() for line in fin.readlines()]
+        dataset_ans = [json.loads(line) for line in lines]
+
     with open(args.data_path_answer.rstrip(".jsonl")+args.model_type+".jsonl", "w") as fout:
-        for line, score in zip(dataset, pred_scores):
+        for line, score in zip(dataset_ans, pred_scores):
             line["prometheus_score"] = score
             fout.write(json.dumps(line)+"\n")
 
