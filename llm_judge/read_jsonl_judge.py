@@ -2,7 +2,7 @@ import json
 import csv
 import random
 
-model_name = "vicuna-7b"
+model_name = "llama2-7b-chat"
 
 quest_file = "data/vicuna_bench/question.jsonl"
 refere_file = "data/vicuna_bench/reference_answer/gpt-4.jsonl"
@@ -40,7 +40,7 @@ open(answer_file1, "r") as fans1, open(answer_file2, "r") as fans2:
         final_dict[qid]["ent1"] = line["evaluations"][0]
         final_dict[qid]["ent2"] = line["evaluations"][1]
 
-with open('gpt-4.tsv', 'w', newline='') as csvfile:
+with open(model_name+'.tsv', 'w', newline='') as csvfile:
     writer = csv.writer(csvfile, delimiter='\t')
 
     random.seed(42)

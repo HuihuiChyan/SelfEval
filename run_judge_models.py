@@ -77,6 +77,8 @@ def main(args):
                                               rubric=example["rubric"],
                                               answer=example["answer1_body"])     
         prompts.append(prompt)
+    
+    import pdb;pdb.set_trace()
 
     predictions = batched_generation(args.model_name_or_path, prompts, 
                                      max_new_token=args.max_new_token, 
