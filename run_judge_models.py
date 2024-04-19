@@ -81,9 +81,9 @@ def main(args):
 
     for qes, ans in zip(dataset_qes, dataset_ans):
         example = {"rubric": "Please rate the helpfulness, relevance, accuracy, level of details of their responses."}
-        example{"question_body"} = qes[0]
-        example{"answer1_body"} = ans[0]
-        example{"answer2_body"} = ans[1]
+        example["question_body"] = qes[0]
+        example["answer1_body"] = ans[0]
+        example["answer2_body"] = ans[1]
         prompt = instruction["single"].format(question=example["question_body"],
                                               rubric=example["rubric"],
                                               answer1=example["answer1_body"],
