@@ -72,6 +72,8 @@ def run_eval(
         ).remote
     else:
         get_answers_func = get_model_answers
+    
+    import pdb;pdb.set_trace()
 
     chunk_size = len(questions) // (num_gpus_total // num_gpus_per_model)
     ans_handles = []
