@@ -93,7 +93,7 @@ def main(args):
     elif args.model_type == "prometheus":
         pred_scores = [parse_score_prometheus_pair(pred) for pred in predictions]
 
-    with open(args.data_path_answer.rstrip(".jsonl")+"-"args.model_type+".jsonl", "w") as fout:
+    with open(args.data_path_answer.rstrip(".jsonl")+"-"+args.model_type+".jsonl", "w") as fout:
         for line, score in zip(lines_ans, pred_scores):
             line["judge_score"] = score
             fout.write(json.dumps(line)+"\n")
