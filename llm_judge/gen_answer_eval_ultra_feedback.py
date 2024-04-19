@@ -228,7 +228,7 @@ if __name__ == "__main__":
 
     prompts = []
     for question in tqdm(questions):
-        conv = get_conversation_template(model_id)
+        conv = get_conversation_template(args.model_id)
 
         qs = question["instruction"]
         conv.append_message(conv.roles[0], qs)
