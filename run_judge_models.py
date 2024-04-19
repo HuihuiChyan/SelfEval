@@ -71,6 +71,8 @@ def main(args):
     instruction = create_prompt_predefined(args.model_type)
     prompts = []
 
+    import pdb;pdb.set_trace()
+
     for example in dataset:
         example["rubric"] = "Please rate the helpfulness, relevance, accuracy, level of details of their responses."
         prompt = instruction["single"].format(question=example["question1_body"],
