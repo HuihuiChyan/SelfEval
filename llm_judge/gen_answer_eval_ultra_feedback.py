@@ -214,12 +214,14 @@ if __name__ == "__main__":
     print(f"Output to {answer_file}")
 
     dataset = load_dataset("parquet", data_files={'train': 'data/ultra_feedback/train_prefs-00000-of-00001.parquet'})
-    questions = dataset['train']['prompt']
+    dataset = dataset['train']['prompt']
 
+    questions = []
     for qid, ques in enumerate(questions):
         question = {}
         question["question_id"] = qid
         question["instruction"] = ques
+        questions.append(question)
 
     assert "ensemble-prompt-" in args.estimation_mode
     args.estimation_mode = args.estimation_mode.replace("ensemble-prompt-", "")
