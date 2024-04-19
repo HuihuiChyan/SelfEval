@@ -52,7 +52,7 @@ def run_eval(
     revision,
     estimation_mode,
 ):
-    dataset = load_dataset("parquet", data_files={'train': 'train_prefs-00000-of-00001.parquet'})
+    dataset = load_dataset("parquet", data_files={'train': 'data/ultra_feedback/train_prefs-00000-of-00001.parquet'})
     import pdb;pdb.set_trace()
 
     for qid, ques in enumerate(questions):
