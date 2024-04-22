@@ -10,7 +10,7 @@ python -u gen_answer_eval_ultra_feedback.py \
     --bench-name $BENCH_NAME \
     --estimation-mode $ESTIMATION_MODE \
     --num-choices 2 \
-    --num-gpus-total 
+    --num-gpus-total 1
 
 # python -u cal_correlation.py \
 #     --model_name $MODEL_NAME \
