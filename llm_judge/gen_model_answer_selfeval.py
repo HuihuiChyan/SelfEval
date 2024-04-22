@@ -128,12 +128,12 @@ def get_model_answers(
         else:
             temperature = 0.7
 
-        evaluations = []
         choices = []
         for i in range(num_choices):
             torch.manual_seed(i)
             conv = get_conversation_template(model_id)
             turns = []
+            evaluations = []
             for j in range(len(question["turns"])):
                 qs = question["turns"][j]
                 conv.append_message(conv.roles[0], qs)
@@ -216,7 +216,7 @@ def get_model_answers(
                 turns.append(output_tokens)
                 evaluations.append(sum(ensem_evaluation)/len(ensem_evaluation))
             
-            choices.append({"index": i, "turns": turns})
+            choices.append({"index": i, "turns": turns, "evaluations": evaluations})
 
         # Dump answers
         os.makedirs(os.path.dirname(answer_file), exist_ok=True)
@@ -226,7 +226,6 @@ def get_model_answers(
                 "answer_id": shortuuid.uuid(),
                 "model_id": model_id,
                 "choices": choices,
-                "evaluations": evaluations,
                 "tstamp": time.time(),
             }
             fout.write(json.dumps(ans_json) + "\n")
