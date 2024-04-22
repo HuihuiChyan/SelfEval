@@ -140,7 +140,7 @@ def get_single_evaluation(
         logprobs = torch.nn.functional.log_softmax(outputs["logits"], dim=-1)
         logprobs[output_ids==-100] = 0 # instruction masking
         # The original entropy has a minus sign, but we remove it to keep the positive correlation
-        logprobs_entropy = torch.mean(logprobs * outputs["logits"])
+        logprobs_entropy = torch.mean(logprobs * outputs["logits"], dim=-1)
         evaluation = logprobs_entropy.sum(-1)[0] / target_len # averaged on target length
 
     elif estimation_mode == "logprobs-variance":
@@ -176,8 +176,7 @@ def get_single_evaluation(
 
         logprobs[output_ids==-100] = 0 # instruction masking
         # The original entropy has a minus sign, but we remove it to keep the positive correlation
-        import pdb;pdb.set_trace()
-        logprobs_entropy = torch.mean(logprobs * outputs["logits"])
+        logprobs_entropy = torch.mean(logprobs * outputs["logits"], dim=-1)
         evaluation_ent = logprobs_entropy.sum(-1)[0] / target_len # averaged on target length
 
         return {"entropy": evaluation_ent, "variance": evaluation_var}
