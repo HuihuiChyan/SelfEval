@@ -53,7 +53,7 @@ def run_eval(
     estimation_mode,
 ):
     dataset = load_dataset("parquet", data_files={'train': 'data/ultra_feedback/train_prefs-00000-of-00001.parquet'})
-    dataset = dataset['train']['prompt'][:10]
+    dataset = dataset['train']['prompt']
 
     questions = []
     for qid, ques in enumerate(dataset):
