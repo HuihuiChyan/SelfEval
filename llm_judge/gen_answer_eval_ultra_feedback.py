@@ -59,7 +59,7 @@ def run_eval(
     for qid, ques in enumerate(dataset):
         question = {}
         question["question_id"] = qid
-        question["instruction"] = ques
+        question["turns"] = [ques]
         questions.append(question)
 
     # Split the question file into `num_gpus` files
