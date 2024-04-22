@@ -1,10 +1,5 @@
 models/
 cal_correlation_cross.py
-<<<<<<< HEAD
 cal_correlation_judge.py
 llm_judge/data/ultra_feedback/*
-=======
-cal_correlation_match.py
-llm_judge/data/ultra_feedback/
->>>>>>> e0fc2b40313a44a273fd1740360aed8b47fad8b7
 # llm_judge/*[0-9].sh
