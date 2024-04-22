@@ -177,8 +177,8 @@ def get_model_answers(
                         target_len,
                         estimation_mode,
                     )
-                    ensem_evaluation_ent.append(evaluation["entropy"])
-                    ensem_evaluation_var.append(evaluation["variance"])
+                    ensem_evaluation_ent.append(evaluation["entropy"].tolist())
+                    ensem_evaluation_var.append(evaluation["variance"].tolist())
 
                 conv.update_last_message(output_tokens)
                 turns.append(output_tokens)
