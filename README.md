@@ -2,8 +2,6 @@
 
 This is the official repository for paper **Self-Evaluation of Large Language Model based on Glass-box Features**.
 
-If you have any quesions, you can contact me with Wechat huanghui20200708.
-
 ## ⚡️ Usage
 ### Preparation
 Please first install [Python 3.10](https://docs.anaconda.com/free/miniconda/miniconda-other-installer-links/#:~:text=Python%203.10-,Miniconda3%20Linux%2064%2Dbit,-127.9%20MiB) and [ray](https://docs.ray.io/en/latest/ray-overview/installation.html#:~:text=Linux%20Python%203.10%20(x86_64)) from the respective links.
@@ -59,17 +57,4 @@ python -u cal_correlation.py \
     --model_name $MODEL_NAME \
     --bench_name $BENCH_NAME \
     --estimation_mode $ESTIMATION_MODE
-```
-# 💬 Citation
-If you find our work is helpful, please cite as:
-
-```
-@misc{huang2024selfevaluation,
-      title={Self-Evaluation of Large Language Model based on Glass-box Features}, 
-      author={Hui Huang and Yingqi Qu and Jing Liu and Muyun Yang and Tiejun Zhao},
-      year={2024},
-      eprint={2403.04222},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
-}
 ```
